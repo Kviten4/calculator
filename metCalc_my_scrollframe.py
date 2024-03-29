@@ -6,7 +6,6 @@ import sys
 import sqlite3
 import pandas
 from PIL import Image
-from CTkListbox import *
 
 
 class App(ctk.CTk):
@@ -422,7 +421,7 @@ class App(ctk.CTk):
                 spreadsheet = ""
                 if standard == "EN10365":
                     spreadsheet = "IPE_EN10365"
-                if profile_name is not None:
+                if profile_name != "blank":
                     self.cursor.execute("SELECT * FROM " + spreadsheet + " WHERE N = '" + str(profile_name) + "' ")
                     data = self.cursor.fetchall()
                     area = data[0][7]
@@ -622,17 +621,17 @@ class BuildInterface(ctk.CTkFrame):
                 for each in data:
                     self.listOfProfiles.append(list(each)[0])
 
-                self.scrollable_button_frame = ScrollableButtonFrame(self, width=108, height=100, border_width = 2,
-                                                                    border_color=master.origEntBorderColor,)
-                self.scrollable_button_frame.grid(row=0, column=0, padx=(lpadx, 0), pady=(hpady + 15, lwpady), rowspan=4, 
-                                                  columnspan = 1, sticky = "nesw")
+                self.scrollable_button_frame = ScrollableButtonFrame(self, width=108, height=100, border_width=2,
+                                                                     border_color=master.origEntBorderColor,)
+                self.scrollable_button_frame.grid(row=0, column=0, padx=(lpadx, 0), pady=(hpady + 15, lwpady),
+                                                  rowspan=4, columnspan=1, sticky="nesw")
                 self.scrollable_button_frame._scrollbar.configure(height=0)
                 self.scrollable_button_frame._scrollbar.grid(row=1, column=1, sticky="nsew", padx=(0, 3))
                 self.scrollable_button_frame.add_items(self.listOfProfiles)
 
                 # image = ctk.CTkImage(Image.open(App.resource_path("assets\\search-50.png")), size=(28, 28))
                 self.Sentry = ctk.CTkEntry(self, width=elem_width, placeholder_text="search", font=self.custom_font,
-                                           justify=justify) #image = image,
+                                           justify=justify)  # image = image,
                 self.Sentry.bind("<KeyRelease>", self.search)
                 self.Sentry.grid(row=0, column=1, padx=(lpadx2, 0), pady=(hpady + 15, lwpady))
 
@@ -641,8 +640,8 @@ class BuildInterface(ctk.CTkFrame):
                                        justify, frame_ind)
 
         self.dLabel = CreateLabels(self, [2, 1], [lpadx2, 0], [0, 0], elem_width, "w", 1)
-        self.dens_entry = CreateEntry(self, [3, 1], [lpadx2, 0], [0, lwpady], elem_width, "7850kg/cub.m", self.custom_font,
-                                      vcmd_d, justify, 3, "w", 1, frame_ind)
+        self.dens_entry = CreateEntry(self, [3, 1], [lpadx2, 0], [0, lwpady], elem_width, "7850kg/cub.m",
+                                      self.custom_font, vcmd_d, justify, 3, "w", 1, frame_ind)
         self.dens_entry.entry.configure(border_color=master.theme_color)
 
         # slider section + label
@@ -654,8 +653,8 @@ class BuildInterface(ctk.CTkFrame):
 
         # result
         self.sumLabel = CreateLabels(self, [7 - minus_row, 0], [lpadx, 0], [0, 0], elem_width, "we", 2)
-        self.sumEntry = CreateEntry(self, [8 - minus_row, 0], [lpadx, 0], [0, 0], elem_width, "result", self.custom_font,
-                                    vcmd_wht, "center", 2, "we", 2, frame_ind)
+        self.sumEntry = CreateEntry(self, [8 - minus_row, 0], [lpadx, 0], [0, 0], elem_width, "result",
+                                    self.custom_font, vcmd_wht, "center", 2, "we", 2, frame_ind)
         self.sumEntry.entry.unbind()
         self.sumEntry.entry.configure(state="readonly")
 
@@ -679,10 +678,11 @@ class BuildInterface(ctk.CTkFrame):
         for widget in self.scrollable_button_frame.winfo_children():
             widget.destroy()
         
-        self.scrollable_button_frame._parent_canvas.yview_moveto(0) # move to start of the list
-        if len(data)>0:
+        self.scrollable_button_frame._parent_canvas.yview_moveto(0)  # move to start of the list
+        if len(data) > 0:
             self.scrollable_button_frame.add_items(data)
-            # self.scrollable_button_frame._scrollbar.configure(minimum_pixel_length=20) # change in ctk_scrollabel_frame.py! 
+            # change in ctk_scrollabel_frame.py!
+            # self.scrollable_button_frame._scrollbar.configure(minimum_pixel_length=20)
         else:
             # self.scrollable_button_frame._scrollbar.configure(minimum_pixel_length=110)
             pass
@@ -767,33 +767,39 @@ class ScrollableButtonFrame(ctk.CTkScrollableFrame):
         super().__init__(master, **kwargs)
         self.configure(fg_color="transparent")
 
-        self.button_chosen = ctk.StringVar(value="")
+        self.button_chosen = "blank"
         self.initial_bt_list = []
 
     def add_items(self, list_of_values):
+        """add list of values"""
         self.initial_bt_list.clear()
         for j, each in enumerate(list_of_values):
             self.add_item(each, j)
         
         """why this is not working?"""
         # for j, each in enumerate(list_of_values):
-        #     self.button = ctk.CTkButton(self, text=each, height=24, width=108, fg_color="transparent", font=self.master.master.master.custom_font, 
-        #                        anchor= "w", command=lambda: self.change_bt_chosen(each))
+        #     self.button = ctk.CTkButton(self, text=each, height=24, width=108, fg_color="transparent",
+        #                                   font=self.master.master.master.custom_font,
+        #                                    anchor= "w", command=lambda: self.change_bt_chosen(each))
         #     self.button.grid(row=j, column=0, pady=(0, 2), padx=0)
 
     def add_item(self, item, j):
-        self.button = ctk.CTkButton(self, text=item, height=24, width=108, fg_color="transparent", font=self.master.master.master.custom_font, 
-                               anchor= "w", command=lambda: self.change_bt_chosen(item, j), text_color=self.master.master.master.master.textColor)
-        self.button.grid(row=j, column=0, pady=(0, 2), padx=0)
-        self.initial_bt_list.append(self.button)
+        """add button"""
+        button = ctk.CTkButton(self, text=item, height=24, width=108, fg_color="transparent",
+                               font=self.master.master.master.custom_font,
+                               anchor="w", command=lambda: self.change_bt_chosen(item, j),
+                               text_color=self.master.master.master.master.textColor)
+        button.grid(row=j, column=0, pady=(0, 2), padx=0)
+        self.initial_bt_list.append(button)
     
-    def change_bt_chosen(self, value, bt_ind):       
-        color = self.master.master.master.master.theme_color #how to get rid of this 'master' train?
+    def change_bt_chosen(self, value, bt_ind):
+        """change chosen button"""
+        color = self.master.master.master.master.theme_color  # how to get rid of this 'master' train?
         for widget in self.initial_bt_list:
             if widget.cget("fg_color") == color:
-                widget.configure(fg_color= "transparent")
+                widget.configure(fg_color="transparent")
                 break
-        self.initial_bt_list[bt_ind].configure(fg_color= color)
+        self.initial_bt_list[bt_ind].configure(fg_color=color)
         self.button_chosen = value
         self.master.master.master.master.goto_count(2)
 
