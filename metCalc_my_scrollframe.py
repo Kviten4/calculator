@@ -417,7 +417,6 @@ class App(ctk.CTk):
                     self.ErLabList[4].configure(text="")
             case 2:
                 self.list_trick()
-                #profile_name = self.interface.listbox.get()
                 profile_name = self.interface.scrollable_button_frame.button_chosen
                 standard = self.interface.combobox.combobox.get()
                 spreadsheet = ""
@@ -540,7 +539,7 @@ class UpperMenu(ctk.CTkFrame):
                 each.configure(fg_color="transparent")
                 break
         self.buttonList[column].configure(fg_color=self.master.hoverBtColor)
-        self.master.change_interface(column)   # self.master
+        self.master.change_interface(column)
 
 
 #########
@@ -623,31 +622,17 @@ class BuildInterface(ctk.CTkFrame):
                 for each in data:
                     self.listOfProfiles.append(list(each)[0])
 
-                # self.listbox = CTkListbox(self, border_width=2, width=109, font=custom_font,
-                #                           border_color=master.origEntBorderColor, text_color=master.textColor,
-                #                           command=lambda event=None, ind=frame_ind: master.goto_count(ind))
-                # self.listbox.grid(row=0, column=0, padx=(lpadx, 0), pady=(hpady + 15, lwpady), rowspan=4, columnspan=1,
-                #                   sticky="nesw")
-                # for i, each in enumerate(self.listOfProfiles):
-                #     self.listbox.insert(i, each)
-
-                ##########
                 self.scrollable_button_frame = ScrollableButtonFrame(self, width=108, height=100, border_width = 2,
                                                                     border_color=master.origEntBorderColor,)
                 self.scrollable_button_frame.grid(row=0, column=0, padx=(lpadx, 0), pady=(hpady + 15, lwpady), rowspan=4, 
                                                   columnspan = 1, sticky = "nesw")
-                #self.scrollable_button_frame.configure(width=106, height=201)
                 self.scrollable_button_frame._scrollbar.configure(height=0)
                 self.scrollable_button_frame._scrollbar.grid(row=1, column=1, sticky="nsew", padx=(0, 3))
                 self.scrollable_button_frame.add_items(self.listOfProfiles)
-                
-                # for j, each in enumerate(self.listOfProfiles):
-                #     self.scrollable_button_frame.add_item(each, j)
-                ############
 
-
+                # image = ctk.CTkImage(Image.open(App.resource_path("assets\\search-50.png")), size=(28, 28))
                 self.Sentry = ctk.CTkEntry(self, width=elem_width, placeholder_text="search", font=self.custom_font,
-                                           justify=justify)
+                                           justify=justify) #image = image,
                 self.Sentry.bind("<KeyRelease>", self.search)
                 self.Sentry.grid(row=0, column=1, padx=(lpadx2, 0), pady=(hpady + 15, lwpady))
 
@@ -690,22 +675,18 @@ class BuildInterface(ctk.CTkFrame):
             for item in self.listOfProfiles:
                 if value.lower() in item.lower():
                     data.append(item)
-        # self.listbox.delete("all")
-        # if len(data) > 0:
-        #     for i, each in enumerate(data):
-        #         self.listbox.insert(i, each)
 
         for widget in self.scrollable_button_frame.winfo_children():
             widget.destroy()
         
+        self.scrollable_button_frame._parent_canvas.yview_moveto(0) # move to start of the list
         if len(data)>0:
             self.scrollable_button_frame.add_items(data)
-            #self.scrollable_button_frame._scrollbar.configure(minimum_pixel_length=20) # change in ctk_scrollabel_frame.py!
-            self.scrollable_button_frame._parent_canvas.yview_moveto(0) # move to start of the list
+            # self.scrollable_button_frame._scrollbar.configure(minimum_pixel_length=20) # change in ctk_scrollabel_frame.py! 
         else:
-            #self.scrollable_button_frame._scrollbar.configure(minimum_pixel_length=110)
-            self.scrollable_button_frame._parent_canvas.yview_moveto(0)
-        #print(self.scrollable_button_frame._scrollbar.cget("minimum_pixel_length"))
+            # self.scrollable_button_frame._scrollbar.configure(minimum_pixel_length=110)
+            pass
+        # print(self.scrollable_button_frame._scrollbar.cget("minimum_pixel_length"))
         
         event.widget.configure(state="normal")
 
@@ -780,23 +761,20 @@ class CreateSlider:
 
 
 ###########################################################################################
-class ImageSide(ctk.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master)
-        self.configure(fg_color="transparent")
-
-
 class ScrollableButtonFrame(ctk.CTkScrollableFrame):
+    """scrollable frame with buttons creating"""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         
-        self.button_chosen = ctk.StringVar(value="ok")
+        self.button_chosen = ctk.StringVar(value="")
+        self.initial_bt_list = []
 
     def add_items(self, list_of_values):
-        #print(list_of_values)
+        self.initial_bt_list.clear()
         for j, each in enumerate(list_of_values):
             self.add_item(each, j)
         
+        """why this is not working?"""
         # for j, each in enumerate(list_of_values):
         #     self.button = ctk.CTkButton(self, text=each, height=24, width=108, fg_color="transparent", font=self.master.master.master.custom_font, 
         #                        anchor= "w", command=lambda: self.change_bt_chosen(each))
@@ -804,16 +782,29 @@ class ScrollableButtonFrame(ctk.CTkScrollableFrame):
 
     def add_item(self, item, j):
         self.button = ctk.CTkButton(self, text=item, height=24, width=108, fg_color="transparent", font=self.master.master.master.custom_font, 
-                               anchor= "w", command=lambda: self.change_bt_chosen(item))
+                               anchor= "w", command=lambda: self.change_bt_chosen(item, j))
         self.button.grid(row=j, column=0, pady=(0, 2), padx=0)
-
-    def change_bt_chosen(self, value):
+        self.initial_bt_list.append(self.button)
+    
+    def change_bt_chosen(self, value, bt_ind):       
+        color = self.master.master.master.master.theme_color #how to get rid of this 'master' train?
+        for widget in self.initial_bt_list:
+            if widget.cget("fg_color") == color:
+                widget.configure(fg_color= "transparent")
+                break
+        self.initial_bt_list[bt_ind].configure(fg_color= color)
         self.button_chosen = value
-        
-        #print(value)
         self.master.master.master.master.goto_count(2)
 
 
+###########################################################################################
+class ImageSide(ctk.CTkFrame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.configure(fg_color="transparent")
+
+
+###########################################################################################
 if __name__ == "__main__":
     ctk.set_appearance_mode("system")  # Modes: system (default), light, dark
     ctk.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
