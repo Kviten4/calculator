@@ -765,7 +765,8 @@ class ScrollableButtonFrame(ctk.CTkScrollableFrame):
     """scrollable frame with buttons creating"""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
-        
+        self.configure(fg_color="transparent")
+
         self.button_chosen = ctk.StringVar(value="")
         self.initial_bt_list = []
 
@@ -782,7 +783,7 @@ class ScrollableButtonFrame(ctk.CTkScrollableFrame):
 
     def add_item(self, item, j):
         self.button = ctk.CTkButton(self, text=item, height=24, width=108, fg_color="transparent", font=self.master.master.master.custom_font, 
-                               anchor= "w", command=lambda: self.change_bt_chosen(item, j))
+                               anchor= "w", command=lambda: self.change_bt_chosen(item, j), text_color=self.master.master.master.master.textColor)
         self.button.grid(row=j, column=0, pady=(0, 2), padx=0)
         self.initial_bt_list.append(self.button)
     
