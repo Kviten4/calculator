@@ -6,7 +6,6 @@ import sys
 import sqlite3
 import pandas
 from PIL import Image
-from CTkListbox import *
 
 
 class App(ctk.CTk):
@@ -166,17 +165,17 @@ class App(ctk.CTk):
                     self.fill_label(er_label_num, 77)
                     self.entriesList[int(er_label_num)].delete(0, "end")
                     self.entriesList[int(er_label_num)].insert(0, "")
-                    self.entriesList[int(er_label_num)].configure(border_color=self.theme_color, validate="all")
+                    self.entriesList[int(er_label_num)].configure(border_color=app.theme_color, validate="all")
                     return False
                 else:
                     if int(inp) <= 10000:
-                        self.entriesList[int(er_label_num)].configure(border_color=self.densChangedC)
+                        self.entriesList[int(er_label_num)].configure(border_color=app.densChangedC)
                         return True
                     else:
                         self.fill_label(er_label_num, 88)
                         return False
             elif inp == "":
-                self.entriesList[int(er_label_num)].configure(border_color=self.theme_color)
+                self.entriesList[int(er_label_num)].configure(border_color=app.theme_color)
                 return True
             else:
                 self.fill_label(er_label_num, 13)
@@ -199,7 +198,7 @@ class App(ctk.CTk):
                     self.change_indicator(er_label_num, False)
                     self.entriesList[int(er_label_num)].delete(0, "end")
                     self.entriesList[int(er_label_num)].insert(0, "")
-                    self.entriesList[int(er_label_num)].configure(border_color=self.origEntBorderColor, validate="all")
+                    self.entriesList[int(er_label_num)].configure(border_color=app.origEntBorderColor, validate="all")
                     return False
                 else:
                     # check max absolute value
@@ -207,7 +206,7 @@ class App(ctk.CTk):
                         # change indList value
                         self.change_indicator(er_label_num, True)
                         # give main color(green, blue)
-                        self.entriesList[int(er_label_num)].configure(border_color=self.theme_color)
+                        self.entriesList[int(er_label_num)].configure(border_color=app.theme_color)
                         return True
                     else:
                         if er_label_num == "2":
@@ -217,7 +216,7 @@ class App(ctk.CTk):
                         return False
             elif inp == "":
                 self.change_indicator(er_label_num, False)
-                self.entriesList[int(er_label_num)].configure(border_color=self.origEntBorderColor)
+                self.entriesList[int(er_label_num)].configure(border_color=app.origEntBorderColor)
                 self.ErLabList[4].configure(text="")
                 return True
             else:
@@ -232,7 +231,7 @@ class App(ctk.CTk):
                         self.change_indicator(er_label_num, False)
                         self.entriesList[int(er_label_num)].delete(0, "end")
                         self.entriesList[int(er_label_num)].insert(0, "")
-                        self.entriesList[int(er_label_num)].configure(border_color=self.origEntBorderColor,
+                        self.entriesList[int(er_label_num)].configure(border_color=app.origEntBorderColor,
                                                                       validate="all")
                         return False
                     if self.check_abs_max(er_label_num, inp):
@@ -241,7 +240,7 @@ class App(ctk.CTk):
                             return False
                         else:
                             self.change_indicator(er_label_num, True)
-                            self.entriesList[int(er_label_num)].configure(border_color=self.theme_color)
+                            self.entriesList[int(er_label_num)].configure(border_color=app.theme_color)
                             return True
                     else:
                         if er_label_num == "2":
@@ -322,11 +321,11 @@ class App(ctk.CTk):
                         self.entriesList[4].delete("0", "end")
                         # readonly state kills placeholder if it defines in same configure
                         self.entriesList[4].configure(placeholder_text="result")
-                        self.entriesList[4].configure(state="readonly", border_color=self.origEntBorderColor)
+                        self.entriesList[4].configure(state="readonly", border_color=app.origEntBorderColor)
                         # if remove not thickness value, change border to green 
                         if i != 2:
                             if self.is_float(self.entriesList[2].get()):
-                                self.entriesList[2].configure(border_color=self.theme_color)
+                                self.entriesList[2].configure(border_color=app.theme_color)
                                 if self.ErLabList[2].cget("text") == "too large thickness":
                                     self.clear_label("2")
                         return
@@ -403,9 +402,9 @@ class App(ctk.CTk):
 
                     if len(data01) == 0:
                         self.ErLabList[4].configure(text="this size is not in the standard")
-                        self.entriesList[4].configure(state="readonly", border_color=self.densChangedC)
+                        self.entriesList[4].configure(state="readonly", border_color=app.densChangedC)
                     else:
-                        self.entriesList[4].configure(state="readonly", border_color=self.theme_color)
+                        self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
                         self.ErLabList[4].configure(text="")
 
                 else:
@@ -417,12 +416,12 @@ class App(ctk.CTk):
                     self.ErLabList[4].configure(text="")
             case 2:
                 self.list_trick()
-                profile_name = self.interface.listbox.get()
+                profile_name = self.interface.scrollable_button_frame.button_chosen
                 standard = self.interface.combobox.combobox.get()
                 spreadsheet = ""
                 if standard == "EN10365":
                     spreadsheet = "IPE_EN10365"
-                if profile_name is not None:
+                if profile_name != "blank":
                     self.cursor.execute("SELECT * FROM " + spreadsheet + " WHERE N = '" + str(profile_name) + "' ")
                     data = self.cursor.fetchall()
                     area = data[0][7]
@@ -435,7 +434,7 @@ class App(ctk.CTk):
                     standard = sizes_text  # ! caution
 
                     self.put_sumtext(area, standard)
-                    self.entriesList[4].configure(state="readonly", border_color=self.theme_color)
+                    self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
 
     #############################
     def give_color_th(self, th, smaller):
@@ -445,7 +444,7 @@ class App(ctk.CTk):
             self.entriesList[2].configure(border_color="red")
             return False
         else:
-            self.entriesList[2].configure(border_color=self.theme_color)
+            self.entriesList[2].configure(border_color=app.theme_color)
             if self.ErLabList[2].cget("text") == "too large thickness":
                 self.clear_label("2")
             return True
@@ -519,6 +518,7 @@ class App(ctk.CTk):
 ###################################################################
 class UpperMenu(ctk.CTkFrame):
     """upper menu"""
+
     def __init__(self, master):
         super().__init__(master)
         self.configure(fg_color="transparent")
@@ -538,13 +538,14 @@ class UpperMenu(ctk.CTkFrame):
             if each.cget("fg_color") != "transparent":
                 each.configure(fg_color="transparent")
                 break
-        self.buttonList[column].configure(fg_color=self.master.hoverBtColor)
-        self.master.change_interface(column)   # self.master
+        self.buttonList[column].configure(fg_color=app.hoverBtColor)
+        app.change_interface(column)
 
 
 #########
 class MenuButton:
     """buttons for upper menu"""
+
     def __init__(self, master, column, image_name, hover_color):
         super().__init__()
         if image_name == "information.png":
@@ -560,6 +561,7 @@ class MenuButton:
 ###################################################################
 class BuildInterface(ctk.CTkFrame):
     """build frame"""
+
     def __init__(self, master, frame_ind):
         super().__init__(master)
         self.configure(fg_color="transparent")
@@ -577,7 +579,7 @@ class BuildInterface(ctk.CTkFrame):
         # for slider
         sl_lab_width = 30
         # fonts
-        custom_font = ('Helvetica', 15)
+        self.custom_font = ('Helvetica', 15)
 
         if frame_ind == 0:
             minus_row = 0
@@ -602,16 +604,16 @@ class BuildInterface(ctk.CTkFrame):
                     placeholder = "outs. diam., mm"
 
                 self.width_entry = CreateEntry(self, [1, 0], [lpadx, 0], [0, lwpady], elem_width, placeholder,
-                                               custom_font, vcmd_wht, justify, 0, "w", 1, frame_ind)
+                                               self.custom_font, vcmd_wht, justify, 0, "w", 1, frame_ind)
 
                 if frame_ind == 0:
                     self.hLabel = CreateLabels(self, [2, 0], [lpadx, 0], [0, 0], elem_width, "w", 1)
                     self.height_entry = CreateEntry(self, [3, 0], [lpadx, 0], [0, lwpady], elem_width, "height, mm",
-                                                    custom_font, vcmd_wht, justify, 1, "w", 1, frame_ind)
+                                                    self.custom_font, vcmd_wht, justify, 1, "w", 1, frame_ind)
 
                 self.tLabel = CreateLabels(self, [4 - minus_row, 0], [lpadx, 0], [0, 0], elem_width, "w", 1)
                 self.thickness_entry = CreateEntry(self, [5 - minus_row, 0], [lpadx, 0], [0, lwpady],
-                                                   elem_width, "thickness, mm", custom_font, vcmd_wht, justify,
+                                                   elem_width, "thickness, mm", self.custom_font, vcmd_wht, justify,
                                                    2, "w", 1, frame_ind)
 
             case 2:
@@ -622,39 +624,41 @@ class BuildInterface(ctk.CTkFrame):
                 for each in data:
                     self.listOfProfiles.append(list(each)[0])
 
-                self.listbox = CTkListbox(self, border_width=2, width=109, font=custom_font,
-                                          border_color=master.origEntBorderColor, text_color=master.textColor,
-                                          command=lambda event=None, ind=frame_ind: master.goto_count(ind))
-                self.listbox.grid(row=0, column=0, padx=(lpadx, 0), pady=(hpady + 15, lwpady), rowspan=4, columnspan=1,
-                                  sticky="nesw")
-                for i, each in enumerate(self.listOfProfiles):
-                    self.listbox.insert(i, each)
+                self.scrollable_button_frame = ScrollableButtonFrame(self, width=108, height=100, border_width=2,
+                                                                     border_color=master.origEntBorderColor, )
+                self.scrollable_button_frame.grid(row=0, column=0, padx=(lpadx, 0), pady=(hpady + 15, lwpady),
+                                                  rowspan=4, columnspan=1, sticky="nesw")
+                self.scrollable_button_frame._scrollbar.configure(height=0)  # bug, it's needed
+                self.scrollable_button_frame._scrollbar.grid(row=1, column=1, sticky="nsew", padx=(0, 3))
+                self.scrollable_button_frame.add_items(self.listOfProfiles)
 
-                self.Sentry = ctk.CTkEntry(self, width=elem_width, placeholder_text="search", font=custom_font,
-                                           justify=justify)
+                # image = ctk.CTkImage(Image.open(App.resource_path("assets\\search-50.png")), size=(28, 28))
+                self.Sentry = ctk.CTkEntry(self, width=elem_width, placeholder_text="search", font=self.custom_font,
+                                           justify=justify)  # image = image,
                 self.Sentry.bind("<KeyRelease>", self.search)
                 self.Sentry.grid(row=0, column=1, padx=(lpadx2, 0), pady=(hpady + 15, lwpady))
 
         # options menu for standards
-        self.combobox = CreateCombobox(self, [1, 1], [lpadx2, 0], [0, lwpady], combo_list, elem_width, custom_font,
+        self.combobox = CreateCombobox(self, [1, 1], [lpadx2, 0], [0, lwpady], combo_list, elem_width, self.custom_font,
                                        justify, frame_ind)
 
         self.dLabel = CreateLabels(self, [2, 1], [lpadx2, 0], [0, 0], elem_width, "w", 1)
-        self.dens_entry = CreateEntry(self, [3, 1], [lpadx2, 0], [0, lwpady], elem_width, "7850kg/cub.m", custom_font,
-                                      vcmd_d, justify, 3, "w", 1, frame_ind)
+        self.dens_entry = CreateEntry(self, [3, 1], [lpadx2, 0], [0, lwpady], elem_width, "7850kg/cub.m",
+                                      self.custom_font, vcmd_d, justify, 3, "w", 1, frame_ind)
         self.dens_entry.entry.configure(border_color=master.theme_color)
 
         # slider section + label
         self.slider = CreateSlider(self, [6 - minus_row, 0], [lpadx, 0], [lwpady, 0], lpadx2, elem_width, sl_lab_width,
                                    frame_ind)
         self.sliderLabel = CreateLabels(self, [6 - minus_row, 1], [lpadx2, 0], [lwpady, 0], sl_lab_width, "e", 1)
-        self.sliderLabel.label.configure(height=28, text=str(1) + "m", anchor="e", font=custom_font,
+        self.sliderLabel.label.configure(height=28, text=str(1) + "m", anchor="e", font=self.custom_font,
                                          text_color=master.textColor)
 
         # result
         self.sumLabel = CreateLabels(self, [7 - minus_row, 0], [lpadx, 0], [0, 0], elem_width, "we", 2)
-        self.sumEntry = CreateEntry(self, [8 - minus_row, 0], [lpadx, 0], [0, 0], elem_width, "result", custom_font,
-                                    vcmd_wht, "center", 2, "we", 2, frame_ind)
+        self.sumEntry = CreateEntry(self, [8 - minus_row, 0], [lpadx, 0], [0, 0], elem_width, "result",
+                                    self.custom_font, vcmd_wht, "center", 2, "we", 2, frame_ind)
+        self.sumEntry.entry.unbind()
         self.sumEntry.entry.configure(state="readonly")
 
         if frame_ind == 2:
@@ -673,16 +677,27 @@ class BuildInterface(ctk.CTkFrame):
             for item in self.listOfProfiles:
                 if value.lower() in item.lower():
                     data.append(item)
-        self.listbox.delete("all")
+
+        for widget in self.scrollable_button_frame.winfo_children():
+            widget.destroy()
+
+        self.scrollable_button_frame._parent_canvas.yview_moveto(0)  # move to start of the list
         if len(data) > 0:
-            for i, each in enumerate(data):
-                self.listbox.insert(i, each)
+            self.scrollable_button_frame.add_items(data)
+            # change in ctk_scrollabel_frame.py!
+            # self.scrollable_button_frame._scrollbar.configure(minimum_pixel_length=20)
+        else:
+            # self.scrollable_button_frame._scrollbar.configure(minimum_pixel_length=110)
+            pass
+        # print(self.scrollable_button_frame._scrollbar.cget("minimum_pixel_length"))
+
         event.widget.configure(state="normal")
 
 
 ##################################
 class CreateLabels:
     """create error labels"""
+
     def __init__(self, master, row_col, padx_l, pady_l, elem_width, sticky, columnspan):
         super().__init__()
 
@@ -699,6 +714,7 @@ class CreateLabels:
 ##################################
 class CreateEntry:
     """entries creating"""
+
     def __init__(self, master, row_col, padx_l, pady_l, elem_width, placeholder, custom_font, vcmd_wht,
                  justify, er_label_num, sticky, columnspan, frame_ind):
         super().__init__()
@@ -708,8 +724,8 @@ class CreateEntry:
         # have to add events because placeholder don't work properly with fucking validatecommand
         self.entry.bind("<FocusIn>", master.master.add_validation)
         # also add erLabelNum for clearing error labels when focusout
-        self.entry.bind("<FocusOut>", lambda event, placeholder_text=placeholder,
-                        lnum=er_label_num: master.master.delete_validation(event, placeholder_text, lnum))
+        self.entry.bind("<FocusOut>", lambda event, placeholder_text=placeholder, lnum=er_label_num:
+                        master.master.delete_validation(event, placeholder_text, lnum))
         # event for get entries values after validation
         self.entry.bind("<KeyRelease>", lambda event=None, ind=frame_ind: master.master.goto_count(ind))
         self.entry.grid(row=row_col[0], column=row_col[1], padx=(padx_l[0], padx_l[1]), pady=(pady_l[0], pady_l[1]),
@@ -719,6 +735,7 @@ class CreateEntry:
 ##################################
 class CreateCombobox:
     """combobox creating"""
+
     def __init__(self, master, row_col, padx_l, pady_l, val_list, elem_width, custom_font, justify, frame_ind):
         super().__init__()
         self.combobox = ctk.CTkComboBox(master,
@@ -735,10 +752,76 @@ class CreateCombobox:
         self.combobox.set(val_list[0])
         self.combobox.grid(row=row_col[0], column=row_col[1], padx=(padx_l[0], padx_l[1]), pady=(pady_l[0], pady_l[1]))
 
+        self.dropdown_menu = None
+        # rebind to new function
+        self.combobox._canvas.tag_unbind("dropdown_arrow", "<Button-1>")
+        self.combobox._canvas.tag_unbind("right_parts", "<Button-1>")
+        self.combobox._canvas.tag_bind("dropdown_arrow", "<Button-1>",
+                                       lambda event: self.arrow_clicked(event, elem_width, val_list, frame_ind))
+        self.combobox._canvas.tag_bind("right_parts", "<Button-1>",
+                                       lambda event: self.arrow_clicked(event, elem_width, val_list, frame_ind))
+
+    ############
+    def arrow_clicked(self, event, elem_width, val_list, frame_ind):
+        """after clicking combobox button(arrow) create toplevel"""
+
+        if self.dropdown_menu is None:
+            # create toplevel dropdown menu
+            self.dropdown_menu = ctk.CTkToplevel(self.combobox)
+            self.dropdown_menu.width = elem_width
+            self.dropdown_menu.height = (28 + 2 + 2) * len(val_list)
+            self.dropdown_menu.overrideredirect(True)  # remove upper panel
+        else:
+            # unhide menu
+            self.dropdown_menu.deiconify()
+
+        x = event.widget.winfo_rootx()
+        y = event.widget.winfo_rooty() + 28 + 1
+        self.dropdown_menu.geometry(str(self.dropdown_menu.width) + 'x' + str(self.dropdown_menu.height) + '+'
+                                    + str(x) + '+' + str(y))
+        self.dropdown_menu.focus()
+        self.frame = ctk.CTkFrame(self.dropdown_menu, border_color=app.origEntBorderColor, border_width=2,
+                                  width=self.dropdown_menu.width, height=self.dropdown_menu.height)
+        self.frame.grid(row=0, column=0)
+
+        self.dropdown_menu.bind("<FocusOut>", lambda even=event: self.hide_dropdown)
+
+        for i, each in enumerate(val_list):
+            self.add_btn(i, each, len(val_list), frame_ind)
+
+    ############
+    def add_btn(self, i, each, length, frame_ind):
+        """add buttons to the dropdown menu"""
+        button = ctk.CTkButton(self.frame, text=each, fg_color="transparent", width=self.dropdown_menu.width - 5,
+                               font=app.interface.custom_font,
+                               command=lambda: self.close_toplevel(each, frame_ind), corner_radius=3, anchor="w")
+        pady_lower = 0
+        if i == length - 1:
+            pady_lower = 2
+
+        button.grid(row=i, column=0, padx=(2, 2), pady=(2, pady_lower))
+
+    ############
+    def close_toplevel(self, item, frame_ind):
+        """change combobox value and close dropdown"""
+        self.combobox._entry.configure(state="normal")
+        self.combobox._entry.delete(0, "end")
+        self.combobox._entry.insert(0, item)
+        self.combobox._entry.configure(state="readonly")
+        self.hide_dropdown()
+        app.optionmenu_callback(frame_ind)
+
+    ############
+    def hide_dropdown(self):
+        """close dropdown menu"""
+        self.dropdown_menu.withdraw()
+        app.interface.focus()
+
 
 ##################################
 class CreateSlider:
     """slider and label creating"""
+
     def __init__(self, master, row_col, padx_l, pady_l, lpadx2, elem_width, sl_lab_width, frame_ind):
         super().__init__()
         self.slider = ctk.CTkSlider(master, from_=1, to=12, number_of_steps=11, border_width=4,
@@ -750,12 +833,57 @@ class CreateSlider:
 
 
 ###########################################################################################
+class ScrollableButtonFrame(ctk.CTkScrollableFrame):
+    """scrollable frame with buttons creating"""
+
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+        self.configure(fg_color="transparent")
+
+        self.button_chosen = "blank"
+        self.initial_bt_list = []
+
+    def add_items(self, list_of_values):
+        """add list of values"""
+        self.initial_bt_list.clear()
+        for j, each in enumerate(list_of_values):
+            self.add_item(each, j)
+
+        """why is this not working?"""
+        # for j, each in enumerate(list_of_values):
+        #     self.button = ctk.CTkButton(self, text=each, height=24, width=108, fg_color="transparent",
+        #                                   font=self.master.master.master.custom_font,
+        #                                    anchor= "w", command=lambda: self.change_bt_chosen(each))
+        #     self.button.grid(row=j, column=0, pady=(0, 2), padx=0)
+
+    def add_item(self, item, j):
+        """add button"""
+        button = ctk.CTkButton(self, text=item, height=24, width=108, fg_color="transparent",
+                               font=self.master.master.master.custom_font,
+                               anchor="w", command=lambda: self.change_bt_chosen(item, j),
+                               text_color=self.master.master.master.master.textColor)
+        button.grid(row=j, column=0, pady=(0, 2), padx=0)
+        self.initial_bt_list.append(button)
+
+    def change_bt_chosen(self, value, bt_ind):
+        """change chosen button"""
+        for widget in self.initial_bt_list:
+            if widget.cget("fg_color") == app.theme_color:
+                widget.configure(fg_color="transparent")
+                break
+        self.initial_bt_list[bt_ind].configure(fg_color=app.theme_color)
+        self.button_chosen = value
+        app.goto_count(2)
+
+
+###########################################################################################
 class ImageSide(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
         self.configure(fg_color="transparent")
 
 
+###########################################################################################
 if __name__ == "__main__":
     ctk.set_appearance_mode("system")  # Modes: system (default), light, dark
     ctk.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
