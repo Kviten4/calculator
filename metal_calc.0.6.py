@@ -12,7 +12,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Metal sections calculator")
+        self.title("Metal profiles calculator")
 
         # place app in the center of the screen
         width = 355
@@ -40,7 +40,7 @@ class App(ctk.CTk):
         # database
         conn = sqlite3.connect(self.resource_path("database\\metalDB.db"))
         self.cursor = conn.cursor()
-        # self.createdataTable(conn)
+        # self.create_table(conn)
 
         # menu
         self.upper_menu = UpperMenu(self)
@@ -310,7 +310,7 @@ class App(ctk.CTk):
             return float(inp) <= 1000
 
     ########################
-    def goto_count(self, frame_ind):  # , event=None,
+    def goto_count(self, frame_ind):
         """keyrelease event, main function"""
         match frame_ind:
             case 0 | 1:
@@ -331,7 +331,7 @@ class App(ctk.CTk):
                         return
                 # get parameters
                 width = float(self.entriesList[0].get().replace(",", "."))
-                height = 10000
+                height = 0
                 if frame_ind == 0:
                     height = float(self.entriesList[1].get().replace(",", "."))
                 thickness = float(self.entriesList[2].get().replace(",", "."))
@@ -358,7 +358,7 @@ class App(ctk.CTk):
                                 spreadsheet = "rectEN10210"
                             case 1:
                                 spreadsheet = "circleEN10210"
-                    else:
+                    elif standard == "EN10219":
                         match frame_ind:
                             case 0:
                                 if thickness <= 6:
@@ -373,12 +373,19 @@ class App(ctk.CTk):
                                 spreadsheet = "rectEN10219"
                             case 1:
                                 spreadsheet = "circleEN10219"
+                    else:
+                        if thickness <=2.5:
+                            ro = 0.5 * thickness
+                        else:
+                            ro = 1.75 * thickness
+                            ri = 0.75 * thickness
+                        spreadsheet = "rectEN10305"
                     # counting
                     if frame_ind == 0:
-                        area = (2 * thickness * (width + height - 2 * thickness) - (4 - 3.141592) * (
-                                ro * ro - ri * ri)) / 100
+                        area = round((2 * thickness * (width + height - 2 * thickness) - (4 - 3.141592) * 
+                                      (ro ** 2 - ri ** 2)) / 100, 5)
                     else:
-                        area = 3.141592 * (width ** 2 - (width - 2 * thickness) ** 2) / 400
+                        area = round(3.141592 * (width ** 2 - (width - 2 * thickness) ** 2) / 400, 5)
 
                     self.put_sumtext(area, standard)
 
@@ -392,8 +399,8 @@ class App(ctk.CTk):
                             else:
                                 self.cursor.execute(
                                     "SELECT * FROM " + spreadsheet + " WHERE ((W =" + str(width) + " ANd H =" + str(
-                                        height) + ") OR (W =" + str(width) + " ANd H =" + str(
-                                        height) + ")) and T =" + str(thickness))
+                                        height) + ") OR (W =" + str(height) + " ANd H =" + str(
+                                        width) + ")) and T =" + str(thickness))
                         case 1:
                             self.cursor.execute(
                                 "SELECT * FROM " + spreadsheet + " WHERE W =" + str(width) + " and T =" + str(
@@ -485,6 +492,7 @@ class App(ctk.CTk):
         self.cursor.execute(
             "CREATE TABLE IF NOT EXISTS IPE_EN10365 ([N] REAL, [M] REAL, "
             "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS rectEN10305 ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
 
         conn.commit()
         # read and rewrite tables
@@ -503,10 +511,14 @@ class App(ctk.CTk):
         spreadsheet = pandas.read_excel("metalDB.xlsx", "IPE")
         spreadsheet.to_sql(name='IPE_EN10365', con=conn, if_exists="replace")
 
+        spreadsheet = pandas.read_excel("metalDB.xlsx", "10305-5")
+        spreadsheet.to_sql(name='rectEN10305', con=conn, if_exists="replace")
+
+
         # self.cursor.execute("SELECT * FROM IPE_EN10365 WHERE N = 'IPE 100' ")
         # data = self.cursor.fetchall()
 
-        conn.close()
+        #conn.close()
 
     #############################
     def list_trick(self):
@@ -587,8 +599,11 @@ class BuildInterface(ctk.CTkFrame):
             minus_row = 2
         if frame_ind == 2:
             combo_list = ["EN10365"]
-        else:
+        elif frame_ind == 1:
             combo_list = ["EN10210", "EN10219"]
+        else:
+            combo_list = ["EN10210", "EN10219", "EN10305-5"]
+
         #######################
         # register validation
         vcmd_wht = (master.register(master.valid_wht))
