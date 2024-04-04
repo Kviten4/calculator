@@ -117,11 +117,11 @@ class App(ctk.CTk):
     ########################
     def popup_info(self):
         """info"""
-        CTkMessagebox(self, title="Info", justify="center", icon_size=(30, 30), font=('Helvetica', 14),
+        CTkMessagebox(self, title="Info", justify="center", icon_size=(30, 30), button_height=28, font=('Helvetica', 14),
                       message="Formulas and data sources:\nhollow sections:\n\
     EN10210-2 p.14-15\n\
     EN10219-2 p.20-22\nI sections:\n\
-    EN10365 p.8-10\n\nby Mozkovyi O.I")
+    EN10365 p.8-10\n\nby Mozgovyi O.I")
 
     ########################
     def sliding(self, value, frame_ind):
@@ -695,6 +695,7 @@ class BuildInterface(ctk.CTkFrame):
         for widget in self.scrollable_button_frame.winfo_children():
             widget.destroy()
 
+        # I want not to destroy all widgets if value = ""
         self.scrollable_button_frame._parent_canvas.yview_moveto(0)  # move to start of the list
         if len(data) > 0:
             self.scrollable_button_frame.add_items(data)
@@ -703,7 +704,6 @@ class BuildInterface(ctk.CTkFrame):
         else:
             # self.scrollable_button_frame._scrollbar.configure(minimum_pixel_length=110)
             pass
-        # print(self.scrollable_button_frame._scrollbar.cget("minimum_pixel_length"))
 
         event.widget.configure(state="normal")
 
