@@ -119,9 +119,9 @@ class App(ctk.CTk):
         """info"""
         CTkMessagebox(self, title="Info", justify="center", icon_size=(30, 30), button_height=28, font=('Helvetica', 14),
                       message="Formulas and data sources:\nhollow sections:\n\
-    EN10210-2 p.14-15\n\
-    EN10219-2 p.20-22\nI sections:\n\
-    EN10365 p.8-10\n\nby Mozgovyi O.I")
+    EN10210-2:2006 p.14-15\n\
+    EN10219-2:2006 p.20-22\n    EN10305-5:2016 p.13-15\nI sections:\n\
+    EN10365:2017 p.8-10\n\nby Mozgovyi O.I")
 
     ########################
     def sliding(self, value, frame_ind):
