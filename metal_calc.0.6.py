@@ -13,7 +13,6 @@ class App(ctk.CTk):
         super().__init__()
 
         self.title("Metal profiles calculator")
-
         # place app in the center of the screen
         width = 355
         height = 300
@@ -374,7 +373,7 @@ class App(ctk.CTk):
                             case 1:
                                 spreadsheet = "circleEN10219"
                     else:
-                        if thickness <=2.5:
+                        if thickness <= 2.5:
                             ro = 0.5 * thickness
                         else:
                             ro = 1.75 * thickness
@@ -799,7 +798,8 @@ class CreateCombobox:
                                   width=self.dropdown_menu.width, height=self.dropdown_menu.height)
         self.frame.grid(row=0, column=0)
 
-        self.dropdown_menu.bind("<FocusOut>", lambda even=event: self.hide_dropdown)
+        # self.dropdown_menu.bind("<FocusOut>", lambda even=event: self.hide_dropdown)
+        self.dropdown_menu.bind("<FocusOut>", self.hide_dropdown)
 
         for i, each in enumerate(val_list):
             self.add_btn(i, each, len(val_list), frame_ind)
@@ -827,7 +827,8 @@ class CreateCombobox:
         app.optionmenu_callback(frame_ind)
 
     ############
-    def hide_dropdown(self):
+    # def hide_dropdown(self):
+    def hide_dropdown(self, event = None):   
         """close dropdown menu"""
         self.dropdown_menu.withdraw()
         app.interface.focus()
