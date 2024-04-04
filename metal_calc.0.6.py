@@ -809,7 +809,8 @@ class CreateCombobox:
         """add buttons to the dropdown menu"""
         button = ctk.CTkButton(self.frame, text=each, fg_color="transparent", width=self.dropdown_menu.width - 5,
                                font=app.interface.custom_font,
-                               command=lambda: self.close_toplevel(each, frame_ind), corner_radius=3, anchor="w")
+                               command=lambda: self.close_toplevel(each, frame_ind), corner_radius=3, anchor="w",
+                               text_color=app.textColor)
         pady_lower = 0
         if i == length - 1:
             pady_lower = 2
