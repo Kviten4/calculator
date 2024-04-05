@@ -39,7 +39,7 @@ class App(ctk.CTk):
         # database
         conn = sqlite3.connect(self.resource_path("database\\metalDB.db"))
         self.cursor = conn.cursor()
-        self.create_table(conn)
+        # self.create_table(conn)
 
         # menu
         self.upper_menu = UpperMenu(self)
@@ -112,7 +112,8 @@ class App(ctk.CTk):
     ########################
     def popup_info(self):
         """info"""
-        CTkMessagebox(self, title="Info", justify="center", icon_size=(30, 30), button_height=28, font=('Helvetica', 14),
+        CTkMessagebox(self, title="Info", justify="center", icon_size=(30, 30), button_height=28,
+                      font=('Helvetica', 14),
                       message="Formulas and data sources:\nhollow sections:\n\
     EN10210-2:2006 p.14-15\n\
     EN10219-2:2006 p.20-22\n    EN10305-5:2016 p.13-15\nI sections:\n\
@@ -340,7 +341,6 @@ class App(ctk.CTk):
                 indicator = self.give_color_th(thickness, smaller)
                 if indicator:
                     standard = self.interface.combobox.combobox.get()
-                    # print(self.interface.combobox.cget("bg_color"))
                     ro = 0
                     ri = 0
                     spreadsheet = ""
@@ -377,7 +377,7 @@ class App(ctk.CTk):
                         spreadsheet = "rectEN10305"
                     # counting
                     if frame_ind == 0:
-                        area = round((2 * thickness * (width + height - 2 * thickness) - (4 - 3.141592) * 
+                        area = round((2 * thickness * (width + height - 2 * thickness) - (4 - 3.141592) *
                                       (ro ** 2 - ri ** 2)) / 100, 5)
                     else:
                         area = round(3.141592 * (width ** 2 - (width - 2 * thickness) ** 2) / 400, 5)
@@ -420,7 +420,6 @@ class App(ctk.CTk):
                 self.list_trick()
                 profile_name = self.interface.scrollable_button_frame.button_chosen
                 standard = self.interface.combobox.combobox.get()
-                spreadsheet = ""
                 if standard == "EN10365" and frame_ind == 2:
                     spreadsheet = "IPE_EN10365"
                 else:
@@ -435,7 +434,7 @@ class App(ctk.CTk):
                         height = int(height)
                     if frame_ind == 2:
                         sizes_text = (str(data[0][1]) + " (" + str(height).replace(".", ",") + "x" +
-                                    str(data[0][4]) + "x" + str(data[0][6]).replace(".", ",") + ")")
+                                      str(data[0][4]) + "x" + str(data[0][6]).replace(".", ",") + ")")
                     else:
                         sizes_text = (str(data[0][1]))
                     standard = sizes_text  # ! caution
@@ -524,7 +523,7 @@ class App(ctk.CTk):
         # self.cursor.execute("SELECT * FROM IPE_EN10365 WHERE N = 'IPE 100' ")
         # data = self.cursor.fetchall()
 
-        #conn.close()
+        # conn.close()
 
     #############################
     def list_trick(self):
@@ -611,9 +610,9 @@ class BuildInterface(ctk.CTkFrame):
         elif frame_ind == 2:
             combo_list = ["EN10365"]
         else:
-            combo_list = ["EN10365"]   
+            combo_list = ["EN10365"]
 
-        #######################
+            #######################
         # register validation
         vcmd_wht = (master.register(master.valid_wht))
         vcmd_d = (master.register(master.valid_dens))
@@ -651,7 +650,7 @@ class BuildInterface(ctk.CTkFrame):
                 data = list(master.cursor.fetchall())
                 self.listOfProfiles = list()
                 for each in data:
-                    self.listOfProfiles.append(list(each)[0][:len(each[0])-remove_last])
+                    self.listOfProfiles.append(list(each)[0][:len(each[0]) - remove_last])
 
                 self.scrollable_button_frame = ScrollableButtonFrame(self, width=108, height=100, border_width=2,
                                                                      border_color=master.origEntBorderColor, )
@@ -752,8 +751,8 @@ class CreateEntry:
         # have to add events because placeholder don't work properly with fucking validatecommand
         self.entry.bind("<FocusIn>", master.master.add_validation)
         # also add erLabelNum for clearing error labels when focusout
-        self.entry.bind("<FocusOut>", lambda event, placeholder_text=placeholder, lnum=er_label_num:
-                        master.master.delete_validation(event, placeholder_text, lnum))
+        self.entry.bind("<FocusOut>", lambda event, placeholder_text=placeholder,
+                        lnum=er_label_num: master.master.delete_validation(event, placeholder_text, lnum))
         # event for get entries values after validation
         self.entry.bind("<KeyRelease>", lambda event=None, ind=frame_ind: master.master.goto_count(ind))
         self.entry.grid(row=row_col[0], column=row_col[1], padx=(padx_l[0], padx_l[1]), pady=(pady_l[0], pady_l[1]),
@@ -841,7 +840,7 @@ class CreateCombobox:
         app.optionmenu_callback(frame_ind)
 
     ############
-    def hide_dropdown(self, event = None):   
+    def hide_dropdown(self, event = None):
         """close dropdown menu"""
         self.dropdown_menu.withdraw()
         app.interface.focus()
