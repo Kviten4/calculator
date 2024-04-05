@@ -39,7 +39,7 @@ class App(ctk.CTk):
         # database
         conn = sqlite3.connect(self.resource_path("database\\metalDB.db"))
         self.cursor = conn.cursor()
-        # self.create_table(conn)
+        self.create_table(conn)
 
         # menu
         self.upper_menu = UpperMenu(self)
@@ -49,14 +49,17 @@ class App(ctk.CTk):
         self.window = BuildInterface(self, 0)
         self.window1 = BuildInterface(self, 1)
         self.window2 = BuildInterface(self, 2)
+        self.window3 = BuildInterface(self, 3)
 
-        self.interface = self.window
+        self.windows_list = [self.window, self.window1, self.window2, self.window3]
+        self.interface = self.windows_list[0]
         self.interface.grid(row=1, column=0, pady=(0, 0), padx=(0, 0))
 
         # create list for entries validations indication
         self.indL = [False, False, False]
         self.indL1 = [False, True, False]
-        self.indList = self.indL
+        self.list_of_indLists = [self.indL, self.indL1, "", ""]
+        self.indList = self.list_of_indLists[0]
 
         # list for errLabels indexes
         self.ErLabLi = [self.window.wLabel.label, self.window.hLabel.label, self.window.tLabel.label,
@@ -64,8 +67,10 @@ class App(ctk.CTk):
         self.ErLabLi1 = [self.window1.wLabel.label, "", self.window1.tLabel.label, self.window1.dLabel.label,
                          self.window1.sumLabel.label]
         self.ErLabLi2 = ["", "", "", self.window2.dLabel.label, self.window2.sumLabel.label]
-        self.ErLabList = self.ErLabLi
-        self.ErLabListNew = self.ErLabLi
+        self.ErLabLi3 = ["", "", "", self.window3.dLabel.label, self.window3.sumLabel.label]
+        self.list_of_labels_lists = [self.ErLabLi, self.ErLabLi1, self.ErLabLi2, self.ErLabLi3]
+        self.ErLabList = self.list_of_labels_lists[0]
+        self.ErLabListNew = self.list_of_labels_lists[0]
 
         # list of entries
         self.entrLst = [self.window.width_entry.entry, self.window.height_entry.entry,
@@ -73,8 +78,10 @@ class App(ctk.CTk):
         self.entrLst1 = [self.window1.width_entry.entry, "", self.window1.thickness_entry.entry,
                          self.window1.dens_entry.entry, self.window1.sumEntry.entry]
         self.entrLst2 = ["", "", "", self.window2.dens_entry.entry, self.window2.sumEntry.entry]
-        self.entriesList = self.entrLst
-        self.entriesListNew = self.entrLst
+        self.entrLst3 = ["", "", "", self.window3.dens_entry.entry, self.window3.sumEntry.entry]
+        self.list_of_entries_lists = [self.entrLst, self.entrLst1, self.entrLst2, self.entrLst3]
+        self.entriesList = self.list_of_entries_lists[0]
+        self.entriesListNew = self.list_of_entries_lists[0]
 
     ########################
     def change_interface(self, frame_ind):
@@ -83,22 +90,10 @@ class App(ctk.CTk):
         self.interface.focus()
         self.interface.grid_remove()
 
-        if frame_ind == 0:
-            self.interface = self.window
-            self.indList = self.indL
-            self.ErLabListNew = self.ErLabLi
-            self.entriesListNew = self.entrLst
-
-        elif frame_ind == 1:
-            self.interface = self.window1
-            self.indList = self.indL1
-            self.ErLabListNew = self.ErLabLi1
-            self.entriesListNew = self.entrLst1
-
-        else:
-            self.interface = self.window2
-            self.ErLabListNew = self.ErLabLi2
-            self.entriesListNew = self.entrLst2
+        self.interface = self.windows_list[frame_ind]
+        self.indList = self.list_of_indLists[frame_ind]
+        self.ErLabListNew = self.list_of_labels_lists[frame_ind]
+        self.entriesListNew = self.list_of_entries_lists[frame_ind]
 
         self.interface.grid(row=1, column=0, pady=(0, 0), padx=(0, 0))
 
@@ -121,12 +116,13 @@ class App(ctk.CTk):
                       message="Formulas and data sources:\nhollow sections:\n\
     EN10210-2:2006 p.14-15\n\
     EN10219-2:2006 p.20-22\n    EN10305-5:2016 p.13-15\nI sections:\n\
-    EN10365:2017 p.8-10\n\nby Mozgovyi O.I")
+    EN10365:2017 p.8-10\n\ntested by Flawless\ncreated by Kviten4")
 
     ########################
     def sliding(self, value, frame_ind):
         """show slide value"""
         self.list_trick()
+        self.interface.focus()
         self.interface.sliderLabel.label.configure(text=str(int(value)) + "m")
         self.goto_count(frame_ind)
 
@@ -420,23 +416,28 @@ class App(ctk.CTk):
                     self.entriesList[4].configure(placeholder_text="result")
                     self.entriesList[4].configure(state="readonly", border_color=self.origEntBorderColor)
                     self.ErLabList[4].configure(text="")
-            case 2:
+            case 2 | 3:
                 self.list_trick()
                 profile_name = self.interface.scrollable_button_frame.button_chosen
                 standard = self.interface.combobox.combobox.get()
                 spreadsheet = ""
-                if standard == "EN10365":
+                if standard == "EN10365" and frame_ind == 2:
                     spreadsheet = "IPE_EN10365"
+                else:
+                    spreadsheet = "PFC_EN10365"
                 if profile_name != "blank":
-                    self.cursor.execute("SELECT * FROM " + spreadsheet + " WHERE N = '" + str(profile_name) + "' ")
+                    self.cursor.execute("SELECT * FROM " + spreadsheet + " WHERE N like '%" + str(profile_name) + "%' ")
                     data = self.cursor.fetchall()
                     area = data[0][7]
 
-                    hei = data[0][3]
-                    if hei.is_integer():
-                        hei = int(hei)
-                    sizes_text = (str(data[0][1]) + " (" + str(hei).replace(".", ",") + "x" +
-                                  str(data[0][4]) + "x" + str(data[0][6]).replace(".", ",") + ")")
+                    height = float(data[0][3])
+                    if height.is_integer():
+                        height = int(height)
+                    if frame_ind == 2:
+                        sizes_text = (str(data[0][1]) + " (" + str(height).replace(".", ",") + "x" +
+                                    str(data[0][4]) + "x" + str(data[0][6]).replace(".", ",") + ")")
+                    else:
+                        sizes_text = (str(data[0][1]))
                     standard = sizes_text  # ! caution
 
                     self.put_sumtext(area, standard)
@@ -464,7 +465,8 @@ class App(ctk.CTk):
             density = float(self.entriesList[3].get()) / 10000
         except (Exception,):
             density = 0.785
-        mass = round(density * area * length, 2)
+        mass = round(density * area, 2)
+        mass = round(mass * length, 2)
         # remove ",oo" if necessary
         if mass.is_integer():
             mass = int(mass)
@@ -491,6 +493,9 @@ class App(ctk.CTk):
         self.cursor.execute(
             "CREATE TABLE IF NOT EXISTS IPE_EN10365 ([N] REAL, [M] REAL, "
             "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
+        self.cursor.execute(
+            "CREATE TABLE IF NOT EXISTS PFC_EN10365 ([N] REAL, [M] REAL, "
+            "[h] FLOAT, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
         self.cursor.execute("CREATE TABLE IF NOT EXISTS rectEN10305 ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
 
         conn.commit()
@@ -510,9 +515,11 @@ class App(ctk.CTk):
         spreadsheet = pandas.read_excel("metalDB.xlsx", "IPE")
         spreadsheet.to_sql(name='IPE_EN10365', con=conn, if_exists="replace")
 
+        spreadsheet = pandas.read_excel("metalDB.xlsx", "PFC")
+        spreadsheet.to_sql(name='PFC_EN10365', con=conn, if_exists="replace")
+
         spreadsheet = pandas.read_excel("metalDB.xlsx", "10305-5")
         spreadsheet.to_sql(name='rectEN10305', con=conn, if_exists="replace")
-
 
         # self.cursor.execute("SELECT * FROM IPE_EN10365 WHERE N = 'IPE 100' ")
         # data = self.cursor.fetchall()
@@ -537,11 +544,12 @@ class UpperMenu(ctk.CTkFrame):
         self.holSecBt = MenuButton(self, 0, "rectang.png", master.hoverBtColor)
         self.circleBt = MenuButton(self, 1, "green-circle.png", "transparent")
         self.beamBt = MenuButton(self, 2, "i-beam.png", "transparent")
+        self.channel_Bt = MenuButton(self, 3, "u_sect.png", "transparent")
 
-        self.buttonList = (self.holSecBt.button, self.circleBt.button, self.beamBt.button)
+        self.buttonList = (self.holSecBt.button, self.circleBt.button, self.beamBt.button, self.channel_Bt.button)
 
         # info button
-        MenuButton(self, 3, "information.png", "transparent")  # InfoBt =
+        MenuButton(self, 4, "information.png", "transparent")  # InfoBt =
 
     def change_fg(self, column):
         """change foreground of side menu button"""
@@ -596,12 +604,14 @@ class BuildInterface(ctk.CTkFrame):
             minus_row = 0
         else:
             minus_row = 2
-        if frame_ind == 2:
-            combo_list = ["EN10365"]
+        if frame_ind == 0:
+            combo_list = ["EN10210", "EN10219", "EN10305-5"]
         elif frame_ind == 1:
             combo_list = ["EN10210", "EN10219"]
+        elif frame_ind == 2:
+            combo_list = ["EN10365"]
         else:
-            combo_list = ["EN10210", "EN10219", "EN10305-5"]
+            combo_list = ["EN10365"]   
 
         #######################
         # register validation
@@ -630,13 +640,18 @@ class BuildInterface(ctk.CTkFrame):
                                                    elem_width, "thickness, mm", self.custom_font, vcmd_wht, justify,
                                                    2, "w", 1, frame_ind)
 
-            case 2:
+            case 2 | 3:
                 # get list of profiles
-                master.cursor.execute("SELECT N FROM IPE_EN10365 ")
+                remove_last = 0
+                if frame_ind == 2:
+                    master.cursor.execute("SELECT N FROM IPE_EN10365 ")
+                else:
+                    master.cursor.execute("SELECT N FROM PFC_EN10365 ")
+                    remove_last = 3
                 data = list(master.cursor.fetchall())
                 self.listOfProfiles = list()
                 for each in data:
-                    self.listOfProfiles.append(list(each)[0])
+                    self.listOfProfiles.append(list(each)[0][:len(each[0])-remove_last])
 
                 self.scrollable_button_frame = ScrollableButtonFrame(self, width=108, height=100, border_width=2,
                                                                      border_color=master.origEntBorderColor, )
@@ -644,12 +659,12 @@ class BuildInterface(ctk.CTkFrame):
                                                   rowspan=4, columnspan=1, sticky="nesw")
                 self.scrollable_button_frame._scrollbar.configure(height=0)  # bug, it's needed
                 self.scrollable_button_frame._scrollbar.grid(row=1, column=1, sticky="nsew", padx=(0, 3))
-                self.scrollable_button_frame.add_items(self.listOfProfiles)
+                self.scrollable_button_frame.add_items(self.listOfProfiles, frame_ind)
 
                 # image = ctk.CTkImage(Image.open(App.resource_path("assets\\search-50.png")), size=(28, 28))
                 self.Sentry = ctk.CTkEntry(self, width=elem_width, placeholder_text="search", font=self.custom_font,
                                            justify=justify)  # image = image,
-                self.Sentry.bind("<KeyRelease>", self.search)
+                self.Sentry.bind("<KeyRelease>", lambda event: self.search(event, frame_ind))
                 self.Sentry.grid(row=0, column=1, padx=(lpadx2, 0), pady=(hpady + 15, lwpady))
 
         # options menu for standards
@@ -675,12 +690,12 @@ class BuildInterface(ctk.CTkFrame):
         self.sumEntry.entry.unbind()
         self.sumEntry.entry.configure(state="readonly")
 
-        if frame_ind == 2:
+        if frame_ind == 2 or frame_ind == 3:
             self.combobox.combobox.grid(row=1, column=1, padx=(lpadx2, 0), pady=(15, lwpady))
             self.dens_entry.entry.configure(border_color=master.theme_color)
 
     ############
-    def search(self, event):
+    def search(self, event, frame_ind):
         """search in listbox"""
         event.widget.configure(state="disabled")
         value = event.widget.get()
@@ -695,10 +710,9 @@ class BuildInterface(ctk.CTkFrame):
         for widget in self.scrollable_button_frame.winfo_children():
             widget.destroy()
 
-        # I want not to destroy all widgets if value = ""
         self.scrollable_button_frame._parent_canvas.yview_moveto(0)  # move to start of the list
         if len(data) > 0:
-            self.scrollable_button_frame.add_items(data)
+            self.scrollable_button_frame.add_items(data, frame_ind)
             # change in ctk_scrollabel_frame.py!
             # self.scrollable_button_frame._scrollbar.configure(minimum_pixel_length=20)
         else:
@@ -759,7 +773,7 @@ class CreateCombobox:
                                         dropdown_font=custom_font,
                                         state="readonly",
                                         command=lambda value=None, ind=frame_ind:
-                                        master.master.optionmenu_callback(ind),
+                                        app.optionmenu_callback(ind),
                                         border_color=master.master.theme_color,
                                         button_color=master.master.theme_color,
                                         justify=justify)
@@ -798,7 +812,6 @@ class CreateCombobox:
                                   width=self.dropdown_menu.width, height=self.dropdown_menu.height)
         self.frame.grid(row=0, column=0)
 
-        # self.dropdown_menu.bind("<FocusOut>", lambda even=event: self.hide_dropdown)
         self.dropdown_menu.bind("<FocusOut>", self.hide_dropdown)
 
         for i, each in enumerate(val_list):
@@ -828,7 +841,6 @@ class CreateCombobox:
         app.optionmenu_callback(frame_ind)
 
     ############
-    # def hide_dropdown(self):
     def hide_dropdown(self, event = None):   
         """close dropdown menu"""
         self.dropdown_menu.withdraw()
@@ -860,29 +872,22 @@ class ScrollableButtonFrame(ctk.CTkScrollableFrame):
         self.button_chosen = "blank"
         self.initial_bt_list = []
 
-    def add_items(self, list_of_values):
+    def add_items(self, list_of_values, frame_ind):
         """add list of values"""
         self.initial_bt_list.clear()
         for j, each in enumerate(list_of_values):
-            self.add_item(each, j)
+            self.add_item(each, j, frame_ind)
 
-        """why is this not working?"""
-        # for j, each in enumerate(list_of_values):
-        #     self.button = ctk.CTkButton(self, text=each, height=24, width=108, fg_color="transparent",
-        #                                   font=self.master.master.master.custom_font,
-        #                                    anchor= "w", command=lambda: self.change_bt_chosen(each))
-        #     self.button.grid(row=j, column=0, pady=(0, 2), padx=0)
-
-    def add_item(self, item, j):
+    def add_item(self, item, j, frame_ind):
         """add button"""
         button = ctk.CTkButton(self, text=item, height=24, width=108, fg_color="transparent",
                                font=self.master.master.master.custom_font,
-                               anchor="w", command=lambda: self.change_bt_chosen(item, j),
+                               anchor="w", command=lambda: self.change_bt_chosen(item, j, frame_ind),
                                text_color=self.master.master.master.master.textColor)
         button.grid(row=j, column=0, pady=(0, 2), padx=0)
         self.initial_bt_list.append(button)
 
-    def change_bt_chosen(self, value, bt_ind):
+    def change_bt_chosen(self, value, bt_ind, frame_ind):
         """change chosen button"""
         for widget in self.initial_bt_list:
             if widget.cget("fg_color") == app.theme_color:
@@ -890,7 +895,7 @@ class ScrollableButtonFrame(ctk.CTkScrollableFrame):
                 break
         self.initial_bt_list[bt_ind].configure(fg_color=app.theme_color)
         self.button_chosen = value
-        app.goto_count(2)
+        app.goto_count(frame_ind)
 
 
 ###########################################################################################
