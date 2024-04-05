@@ -131,7 +131,20 @@ class App(ctk.CTk):
     def optionmenu_callback(self, frame_ind):
         """combobox, redirect to goto_count"""
         self.list_trick()
-        self.goto_count(frame_ind)
+        if frame_ind == 2:
+            app.interface.Sentry.delete(0, "end")
+            app.interface.Sentry.configure(placeholder_text="search")
+            app.interface.scrollable_button_frame.button_chosen = "blank"
+            app.clear_result_entry()
+            value = app.interface.combobox.combobox.get()
+            for widget in app.interface.scrollable_button_frame.winfo_children():
+                widget.destroy()
+            if value == "EN10365 - IPE":  # , "EN10365 - IPN"]
+                app.interface.scrollable_button_frame.add_items(app.interface.frame_list_of_sec_lists[0], frame_ind)
+            else:
+                app.interface.scrollable_button_frame.add_items(app.interface.frame_list_of_sec_lists[1], frame_ind)
+        else:
+            self.goto_count(frame_ind)
 
     ########################
     def add_validation(self, event):
@@ -313,11 +326,7 @@ class App(ctk.CTk):
                 # check all indicators
                 for i, each in enumerate(self.indList):
                     if not each:
-                        self.entriesList[4].configure(state="normal")
-                        self.entriesList[4].delete("0", "end")
-                        # readonly state kills placeholder if it defines in same configure
-                        self.entriesList[4].configure(placeholder_text="result")
-                        self.entriesList[4].configure(state="readonly", border_color=app.origEntBorderColor)
+                        self.clear_result_entry()
                         # if remove not thickness value, change border to green 
                         if i != 2:
                             if self.is_float(self.entriesList[2].get()):
@@ -410,18 +419,15 @@ class App(ctk.CTk):
                         self.ErLabList[4].configure(text="")
 
                 else:
-                    self.entriesList[4].configure(state="normal")
-                    self.entriesList[4].delete("0", "end")
-                    # readonly state kills placeholder if it defines in the same configure
-                    self.entriesList[4].configure(placeholder_text="result")
-                    self.entriesList[4].configure(state="readonly", border_color=self.origEntBorderColor)
-                    self.ErLabList[4].configure(text="")
+                    self.clear_result_entry()
             case 2 | 3:
                 self.list_trick()
                 profile_name = self.interface.scrollable_button_frame.button_chosen
                 standard = self.interface.combobox.combobox.get()
-                if standard == "EN10365" and frame_ind == 2:
+                if standard == "EN10365 - IPE" and frame_ind == 2:
                     spreadsheet = "IPE_EN10365"
+                elif standard == "EN10365 - IPN" and frame_ind == 2:
+                    spreadsheet = "IPN_EN10365"
                 else:
                     spreadsheet = "PFC_EN10365"
                 if profile_name != "blank":
@@ -482,6 +488,17 @@ class App(ctk.CTk):
         self.entriesList[4].delete("0", "end")
         self.entriesList[4].insert(0, sumtext)
 
+
+    ##############################
+    def clear_result_entry(self):
+        """clear result entry"""
+        self.entriesList[4].configure(state="normal")
+        self.entriesList[4].delete("0", "end")
+        # readonly state kills placeholder if it defines in the same configure
+        self.entriesList[4].configure(placeholder_text="result")
+        self.entriesList[4].configure(state="readonly", border_color=self.origEntBorderColor)
+        self.ErLabList[4].configure(text="")
+
     #############################
     def create_table(self, conn):
         """create new table for database"""
@@ -494,7 +511,10 @@ class App(ctk.CTk):
             "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
         self.cursor.execute(
             "CREATE TABLE IF NOT EXISTS PFC_EN10365 ([N] REAL, [M] REAL, "
-            "[h] FLOAT, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
+            "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
+        self.cursor.execute(
+            "CREATE TABLE IF NOT EXISTS IPN_EN10365 ([N] REAL, [M] REAL, "
+            "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
         self.cursor.execute("CREATE TABLE IF NOT EXISTS rectEN10305 ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
 
         conn.commit()
@@ -513,6 +533,9 @@ class App(ctk.CTk):
 
         spreadsheet = pandas.read_excel("metalDB.xlsx", "IPE")
         spreadsheet.to_sql(name='IPE_EN10365', con=conn, if_exists="replace")
+
+        spreadsheet = pandas.read_excel("metalDB.xlsx", "IPN")
+        spreadsheet.to_sql(name='IPN_EN10365', con=conn, if_exists="replace")
 
         spreadsheet = pandas.read_excel("metalDB.xlsx", "PFC")
         spreadsheet.to_sql(name='PFC_EN10365', con=conn, if_exists="replace")
@@ -608,7 +631,7 @@ class BuildInterface(ctk.CTkFrame):
         elif frame_ind == 1:
             combo_list = ["EN10210", "EN10219"]
         elif frame_ind == 2:
-            combo_list = ["EN10365"]
+            combo_list = ["EN10365 - IPE", "EN10365 - IPN"]
         else:
             combo_list = ["EN10365"]
 
@@ -641,16 +664,18 @@ class BuildInterface(ctk.CTkFrame):
 
             case 2 | 3:
                 # get list of profiles
+                self.frame_list_of_sec_lists = []
                 remove_last = 0
                 if frame_ind == 2:
-                    master.cursor.execute("SELECT N FROM IPE_EN10365 ")
+                    tables_names = ["IPE_EN10365", "IPN_EN10365"]
                 else:
-                    master.cursor.execute("SELECT N FROM PFC_EN10365 ")
+                    tables_names = ["PFC_EN10365"]
                     remove_last = 3
-                data = list(master.cursor.fetchall())
-                self.listOfProfiles = list()
-                for each in data:
-                    self.listOfProfiles.append(list(each)[0][:len(each[0]) - remove_last])
+                for i, every in enumerate(tables_names):
+                    self.frame_list_of_sec_lists.append(list())
+                    data = list(master.cursor.execute("SELECT N FROM " + every).fetchall())
+                    for each in data:
+                        self.frame_list_of_sec_lists[i].append(list(each)[0][:len(list(each)[0]) - remove_last])
 
                 self.scrollable_button_frame = ScrollableButtonFrame(self, width=108, height=100, border_width=2,
                                                                      border_color=master.origEntBorderColor, )
@@ -658,7 +683,8 @@ class BuildInterface(ctk.CTkFrame):
                                                   rowspan=4, columnspan=1, sticky="nesw")
                 self.scrollable_button_frame._scrollbar.configure(height=0)  # bug, it's needed
                 self.scrollable_button_frame._scrollbar.grid(row=1, column=1, sticky="nsew", padx=(0, 3))
-                self.scrollable_button_frame.add_items(self.listOfProfiles, frame_ind)
+                # self.scrollable_button_frame.add_items(self.listOfProfiles, frame_ind)
+                self.scrollable_button_frame.add_items(self.frame_list_of_sec_lists[0], frame_ind)
 
                 # image = ctk.CTkImage(Image.open(App.resource_path("assets\\search-50.png")), size=(28, 28))
                 self.Sentry = ctk.CTkEntry(self, width=elem_width, placeholder_text="search", font=self.custom_font,
@@ -695,14 +721,19 @@ class BuildInterface(ctk.CTkFrame):
 
     ############
     def search(self, event, frame_ind):
-        """search in listbox"""
+        """search in scrollable frame"""
         event.widget.configure(state="disabled")
+        
+        standart = app.interface.combobox.combobox.get()
+        i = 0
+        if standart == "EN10365 - IPN":
+            i = 1
         value = event.widget.get()
         if value == "":
-            data = self.listOfProfiles
+            data = self.frame_list_of_sec_lists[i]
         else:
             data = []
-            for item in self.listOfProfiles:
+            for item in self.frame_list_of_sec_lists[i]:
                 if value.lower() in item.lower():
                     data.append(item)
 
@@ -771,8 +802,8 @@ class CreateCombobox:
                                         font=custom_font,
                                         dropdown_font=custom_font,
                                         state="readonly",
-                                        command=lambda value=None, ind=frame_ind:
-                                        app.optionmenu_callback(ind),
+                                        # command=lambda value=None, ind=frame_ind:
+                                        # app.optionmenu_callback(ind),
                                         border_color=master.master.theme_color,
                                         button_color=master.master.theme_color,
                                         justify=justify)
