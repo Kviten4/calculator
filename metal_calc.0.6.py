@@ -140,6 +140,7 @@ class App(ctk.CTk):
             value = app.interface.combobox.combobox.get()
             for widget in app.interface.scrollable_button_frame.winfo_children():
                 widget.destroy()
+            app.interface.scrollable_button_frame._parent_canvas.yview_moveto(0)
             if value == "EN10365 - IPE":  # , "EN10365 - IPN"]
                 app.interface.scrollable_button_frame.add_items(app.interface.frame_list_of_sec_lists[0], frame_ind)
             else:
