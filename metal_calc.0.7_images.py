@@ -14,7 +14,7 @@ class App(ctk.CTk):
 
         self.title("Metal profiles calculator")
         # place app in the center of the screen
-        width = 355
+        width = 800
         height = 300
         x = int(self.winfo_screenwidth() / 2 - width / 2)
         y = int(self.winfo_screenheight() / 2 - height / 2)
@@ -43,7 +43,10 @@ class App(ctk.CTk):
 
         # menu
         self.upper_menu = UpperMenu(self)
-        self.upper_menu.grid(row=0, column=0, pady=(10, 0), padx=(30, 0), sticky="w")
+        self.upper_menu.grid(row=0, column=0, pady=(10, 7), padx=(30, 0), sticky="", columnspan = 2)
+
+        self.image_side = ImageSide(self)
+        self.image_side.grid(row=1, column=0, pady=(0, 0), padx=(30, 0), sticky="nw")
 
         # interface
         self.window = BuildInterface(self, 0)
@@ -53,7 +56,7 @@ class App(ctk.CTk):
 
         self.windows_list = [self.window, self.window1, self.window2, self.window3]
         self.interface = self.windows_list[0]
-        self.interface.grid(row=1, column=0, pady=(0, 0), padx=(0, 0))
+        self.interface.grid(row=1, column=1, pady=(0, 0), padx=(0, 0), sticky="nw")
 
         # create list for entries validations indication
         self.indL = [False, False, False]
@@ -95,7 +98,7 @@ class App(ctk.CTk):
         self.ErLabListNew = self.list_of_labels_lists[frame_ind]
         self.entriesListNew = self.list_of_entries_lists[frame_ind]
 
-        self.interface.grid(row=1, column=0, pady=(0, 0), padx=(0, 0))
+        self.interface.grid(row=1, column=1, pady=(0, 0), padx=(0, 0), sticky="nw")
 
     ########################
     @staticmethod
@@ -612,7 +615,7 @@ class BuildInterface(ctk.CTkFrame):
         # some paddings
         lpadx = 30  # left padx
         lpadx2 = 25  # left padx 2-nd column
-        hpady = 7  # upper pady
+        hpady = 0  # upper pady
         lwpady = 5  # lower pady
         justify = "left"
 
@@ -930,12 +933,19 @@ class ScrollableButtonFrame(ctk.CTkScrollableFrame):
 class ImageSide(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
-        self.configure(fg_color="transparent")
-
+        #self.configure(fg_color="transparent")
+        image_name = "bigRec2.png"
+        image = ctk.CTkImage(Image.open(App.resource_path("assets\\" + image_name)), size=(293, 225))
+        self.label = ctk.CTkLabel(self, text="", image=image)
+        self.label.pack()
+        self.label_h = ctk.CTkLabel(self.label, text="999.99", fg_color="transparent", font=('Helvetica', 13), height=13)
+        self.label_h.place(x=262, y=78)
+        self.label_w = ctk.CTkLabel(self.label, text="999.99", fg_color="transparent", font=('Helvetica', 13), height=13)
+        self.label_w.place(x=135, y=200)
 
 ###########################################################################################
 if __name__ == "__main__":
-    ctk.set_appearance_mode("dark")  # Modes: system (default), light, dark
+    ctk.set_appearance_mode("system")  # Modes: system (default), light, dark
     ctk.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
     app = App()
     app.mainloop()
