@@ -14,7 +14,7 @@ class App(ctk.CTk):
 
         self.title("Metal profiles calculator")
         # place app in the center of the screen
-        width = 800
+        width = 680
         height = 300
         x = int(self.winfo_screenwidth() / 2 - width / 2)
         y = int(self.winfo_screenheight() / 2 - height / 2)
@@ -43,7 +43,7 @@ class App(ctk.CTk):
 
         # menu
         self.upper_menu = UpperMenu(self)
-        self.upper_menu.grid(row=0, column=0, pady=(10, 7), padx=(30, 0), sticky="", columnspan = 2)
+        self.upper_menu.grid(row=0, column=0, pady=(10, 10), padx=(30, 0), sticky="", columnspan = 2)
 
         # side image with parameters
         self.image_side_list = [ImageSide(self, 0), ImageSide(self, 1), ImageSide(self, 2), ImageSide(self, 3)]
@@ -452,12 +452,6 @@ class App(ctk.CTk):
                     height = float(data[0][3])
                     if height.is_integer():
                         height = int(height)
-                    # if frame_ind == 2:
-                    #     sizes_text = (str(data[0][1]) + " (" + str(height).replace(".", ",") + "x" +
-                    #                   str(data[0][4]) + "x" + str(data[0][6]).replace(".", ",") + ")")
-                    # else:
-                    #     sizes_text = (str(data[0][1]))
-                    # standard = sizes_text  # ! caution
                     standard = standard.split(" ")[0] + " - " + str(data[0][1])
                     self.put_sumtext(area, standard)
                     self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
@@ -703,33 +697,33 @@ class BuildInterface(ctk.CTkFrame):
                 self.Sentry = ctk.CTkEntry(self, width=elem_width, placeholder_text="search", font=self.custom_font,
                                            justify=justify)  # image = image,
                 self.Sentry.bind("<KeyRelease>", lambda event: self.search(event, frame_ind))
-                self.Sentry.grid(row=0, column=1, padx=(lpadx2, 0), pady=(hpady + 5, lwpady))
+                self.Sentry.grid(row=0, column=1, padx=(lpadx2, lpadx), pady=(hpady + 5, lwpady))
 
         # options menu for standards
-        self.combobox = CreateCombobox(self, [1, 1], [lpadx2, 0], [0, lwpady], combo_list, elem_width, self.custom_font,
+        self.combobox = CreateCombobox(self, [1, 1], [lpadx2, lpadx], [0, lwpady], combo_list, elem_width, self.custom_font,
                                        justify, frame_ind)
 
-        self.dLabel = CreateLabels(self, [2, 1], [lpadx2, 0], [0, 0], elem_width, "w", 1)
-        self.dens_entry = CreateEntry(self, [3, 1], [lpadx2, 0], [0, lwpady + dens_tail], elem_width, "7850kg/cub.m",
+        self.dLabel = CreateLabels(self, [2, 1], [lpadx2, lpadx], [0, 0], elem_width, "w", 1)
+        self.dens_entry = CreateEntry(self, [3, 1], [lpadx2, lpadx], [0, lwpady + dens_tail], elem_width, "7850kg/cub.m",
                                       self.custom_font, vcmd_d, justify, 3, "w", 1, frame_ind)
         self.dens_entry.entry.configure(border_color=master.theme_color)
 
         # slider section + label
         self.slider = CreateSlider(self, [6 - minus_row, 0], [lpadx, 0], [lwpady, 0], lpadx2, elem_width, sl_lab_width,
                                    frame_ind)
-        self.sliderLabel = CreateLabels(self, [6 - minus_row, 1], [lpadx2, 0], [lwpady, 0], sl_lab_width, "e", 1)
+        self.sliderLabel = CreateLabels(self, [6 - minus_row, 1], [lpadx2, lpadx], [lwpady, 0], sl_lab_width, "e", 1)
         self.sliderLabel.label.configure(height=28, text=str(1) + "m", anchor="e", font=self.custom_font,
                                          text_color=master.textColor)
 
         # result
-        self.sumLabel = CreateLabels(self, [7 - minus_row, 0], [lpadx, 0], [0, 0], elem_width, "we", 2)
-        self.sumEntry = CreateEntry(self, [8 - minus_row, 0], [lpadx, 0], [0, 0], elem_width, "result",
+        self.sumLabel = CreateLabels(self, [7 - minus_row, 0], [lpadx, lpadx], [0, 0], elem_width, "we", 2)
+        self.sumEntry = CreateEntry(self, [8 - minus_row, 0], [lpadx, lpadx], [0, 0], elem_width, "result",
                                     self.custom_font, vcmd_wht, "center", 2, "we", 2, frame_ind)
         self.sumEntry.entry.unbind()
         self.sumEntry.entry.configure(state="readonly")
 
         if frame_ind == 2 or frame_ind == 3:
-            self.combobox.combobox.grid(row=1, column=1, padx=(lpadx2, 0), pady=(15, lwpady))
+            self.combobox.combobox.grid(row=1, column=1, padx=(lpadx2, lpadx), pady=(15, lwpady))
             self.dens_entry.entry.configure(border_color=master.theme_color)
 
     ############
@@ -948,16 +942,16 @@ class ImageSide(ctk.CTkFrame):
         super().__init__(master)
         self.configure(fg_color="transparent")
         self.labels_parameters = [
-            [["H", 248, 114], ["W", 114, 188], ["t", 3, 117], ["R", 3, 11], ["r", 94, 56]],
+            [["H", 248, 114], ["W", 115, 188], ["t", 1, 117], ["R", 3, 11], ["r", 94, 56]],
             [["D", 223, 23], ["t", 223, 172]],
-            [["H", 9, 104], ["W", 114, 187], ["t", 238, 34], ["s", 178, 120]],
-            [["d", 248, 115], ["t", 118, 188]]
+            [["H", 9, 104], ["W", 115, 187], ["t", 238, 34], ["s", 178, 120]],
+            [["H", 0, 104], ["W", 115, 187], ["t", 238, 34], ["s", 135, 86]]
         ]
         self.image_label_list = [[], [], [], []]
         self.beams_images = [
             ctk.CTkImage(Image.open(App.resource_path("assets\\" + "bigBeam.png")), size=(293, 225)), 
             ctk.CTkImage(Image.open(App.resource_path("assets\\" + "bigBeam_taper.png")), size=(293, 225))]
-        self.image_png_names = ["bigRec.png", "bigCircle.png", "bigBeam.png", "u_sect.png", ]
+        self.image_png_names = ["bigRec.png", "bigCircle.png", "bigBeam.png", "big_Usect.png", ]
         
         self.create_imageside(frame_ind)
 
@@ -968,7 +962,7 @@ class ImageSide(ctk.CTkFrame):
         self.label_im = ctk.CTkLabel(self, text="", image=image)
         self.label_im.pack()
         for item in self.labels_parameters[frame_ind]:
-            label = ctk.CTkLabel(self.label_im, fg_color="transparent", font=('Helvetica', 14), height=13, width=35, anchor= "center",
+            label = ctk.CTkLabel(self.label_im, fg_color="transparent", font=('Helvetica', 14), height=13, width=34, anchor= "center",
                                     text=item[0])
             label.place(x=item[1], y=item[2])
             self.image_label_list[frame_ind].append(label)
