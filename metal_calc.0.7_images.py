@@ -45,44 +45,39 @@ class App(ctk.CTk):
         self.upper_menu = UpperMenu(self)
         self.upper_menu.grid(row=0, column=0, pady=(10, 7), padx=(30, 0), sticky="", columnspan = 2)
 
-        self.image_side = ImageSide(self)
+        # side image with parameters
+        self.image_side_list = [ImageSide(self, 0), ImageSide(self, 1), ImageSide(self, 2), ImageSide(self, 3)]
+        self.image_side = self.image_side_list[0]
         self.image_side.grid(row=1, column=0, pady=(0, 0), padx=(30, 0), sticky="nw")
 
         # interface
-        self.window = BuildInterface(self, 0)
-        self.window1 = BuildInterface(self, 1)
-        self.window2 = BuildInterface(self, 2)
-        self.window3 = BuildInterface(self, 3)
-
-        self.windows_list = [self.window, self.window1, self.window2, self.window3]
+        self.windows_list = [BuildInterface(self, 0), BuildInterface(self, 1), BuildInterface(self, 2), BuildInterface(self, 3)]
         self.interface = self.windows_list[0]
         self.interface.grid(row=1, column=1, pady=(0, 0), padx=(0, 0), sticky="nw")
 
         # create list for entries validations indication
-        self.indL = [False, False, False]
-        self.indL1 = [False, True, False]
-        self.list_of_indLists = [self.indL, self.indL1, "", ""]
+        self.list_of_indLists = [[False, False, False], [False, True, False], "", ""]
         self.indList = self.list_of_indLists[0]
 
         # list for errLabels indexes
-        self.ErLabLi = [self.window.wLabel.label, self.window.hLabel.label, self.window.tLabel.label,
-                        self.window.dLabel.label, self.window.sumLabel.label]
-        self.ErLabLi1 = [self.window1.wLabel.label, "", self.window1.tLabel.label, self.window1.dLabel.label,
-                         self.window1.sumLabel.label]
-        self.ErLabLi2 = ["", "", "", self.window2.dLabel.label, self.window2.sumLabel.label]
-        self.ErLabLi3 = ["", "", "", self.window3.dLabel.label, self.window3.sumLabel.label]
-        self.list_of_labels_lists = [self.ErLabLi, self.ErLabLi1, self.ErLabLi2, self.ErLabLi3]
+        ErLabLi = [self.windows_list[0].wLabel.label, self.windows_list[0].hLabel.label, self.windows_list[0].tLabel.label,
+                        self.windows_list[0].dLabel.label, self.windows_list[0].sumLabel.label]
+        ErLabLi1 = [self.windows_list[1].wLabel.label, "", self.windows_list[1].tLabel.label, self.windows_list[1].dLabel.label,
+                         self.windows_list[1].sumLabel.label]
+        ErLabLi2 = ["", "", "", self.windows_list[2].dLabel.label, self.windows_list[2].sumLabel.label]
+        ErLabLi3 = ["", "", "", self.windows_list[3].dLabel.label, self.windows_list[3].sumLabel.label]
+        self.list_of_labels_lists = [ErLabLi, ErLabLi1, ErLabLi2, ErLabLi3]
         self.ErLabList = self.list_of_labels_lists[0]
         self.ErLabListNew = self.list_of_labels_lists[0]
 
         # list of entries
-        self.entrLst = [self.window.width_entry.entry, self.window.height_entry.entry,
-                        self.window.thickness_entry.entry, self.window.dens_entry.entry, self.window.sumEntry.entry]
-        self.entrLst1 = [self.window1.width_entry.entry, "", self.window1.thickness_entry.entry,
-                         self.window1.dens_entry.entry, self.window1.sumEntry.entry]
-        self.entrLst2 = ["", "", "", self.window2.dens_entry.entry, self.window2.sumEntry.entry]
-        self.entrLst3 = ["", "", "", self.window3.dens_entry.entry, self.window3.sumEntry.entry]
-        self.list_of_entries_lists = [self.entrLst, self.entrLst1, self.entrLst2, self.entrLst3]
+        entrLst = [self.windows_list[0].width_entry.entry, self.windows_list[0].height_entry.entry,
+                        self.windows_list[0].thickness_entry.entry, self.windows_list[0].dens_entry.entry, self.windows_list[0].sumEntry.entry]
+        entrLst1 = [self.windows_list[1].width_entry.entry, "", self.windows_list[1].thickness_entry.entry,
+                         self.windows_list[1].dens_entry.entry, self.windows_list[1].sumEntry.entry]
+        entrLst2 = ["", "", "", self.windows_list[2].dens_entry.entry, self.windows_list[2].sumEntry.entry]
+        entrLst3 = ["", "", "", self.windows_list[3].dens_entry.entry, self.windows_list[3].sumEntry.entry]
+        self.list_of_entries_lists = [entrLst, entrLst1, entrLst2, entrLst3]
         self.entriesList = self.list_of_entries_lists[0]
         self.entriesListNew = self.list_of_entries_lists[0]
 
@@ -91,13 +86,16 @@ class App(ctk.CTk):
         """change frames"""
         # remove focus from entry
         self.interface.focus()
+        self.image_side.grid_remove()
         self.interface.grid_remove()
 
+        self.image_side = self.image_side_list[frame_ind]
         self.interface = self.windows_list[frame_ind]
         self.indList = self.list_of_indLists[frame_ind]
         self.ErLabListNew = self.list_of_labels_lists[frame_ind]
         self.entriesListNew = self.list_of_entries_lists[frame_ind]
 
+        self.image_side.grid(row=1, column=0, pady=(0, 0), padx=(30, 0), sticky="nw")
         self.interface.grid(row=1, column=1, pady=(0, 0), padx=(0, 0), sticky="nw")
 
     ########################
@@ -332,6 +330,7 @@ class App(ctk.CTk):
                 for i, each in enumerate(self.indList):
                     if not each:
                         self.clear_result_entry()
+                        app.image_side.clear_imageside(frame_ind)
                         # if remove not thickness value, change border to green 
                         if i != 2:
                             if self.is_float(self.entriesList[2].get()):
@@ -355,8 +354,8 @@ class App(ctk.CTk):
                 indicator = self.give_color_th(thickness, smaller)
                 if indicator:
                     standard = self.interface.combobox.combobox.get()
-                    ro = 0
-                    ri = 0
+                    ro = 0.0
+                    ri = 0.0
                     spreadsheet = ""
                     if standard == "EN10210":
                         match frame_ind:
@@ -393,8 +392,10 @@ class App(ctk.CTk):
                     if frame_ind == 0:
                         area = round((2 * thickness * (width + height - 2 * thickness) - (4 - 3.141592) *
                                       (ro ** 2 - ri ** 2)) / 100, 5)
+                        app.image_side.pollute_imageside(frame_ind, [width, height, thickness, ro, ri])
                     else:
                         area = round(3.141592 * (width ** 2 - (width - 2 * thickness) ** 2) / 400, 5)
+                        app.image_side.pollute_imageside(frame_ind, [width, thickness])
 
                     self.put_sumtext(area, standard)
 
@@ -425,6 +426,8 @@ class App(ctk.CTk):
 
                 else:
                     self.clear_result_entry()
+                    app.image_side.clear_imageside(frame_ind)
+
             case 2 | 3:
                 self.list_trick()
                 profile_name = self.interface.scrollable_button_frame.button_chosen
@@ -645,6 +648,7 @@ class BuildInterface(ctk.CTkFrame):
 
         match frame_ind:
             case 0 | 1:
+                dens_tail = 0
                 self.wLabel = CreateLabels(self, [0, 0], [lpadx, 0], [hpady, 0], elem_width, "w", 1)
 
                 if frame_ind == 0:
@@ -668,6 +672,7 @@ class BuildInterface(ctk.CTkFrame):
             case 2 | 3:
                 # get list of profiles
                 self.frame_list_of_sec_lists = []
+                dens_tail = 10
                 remove_last = 0
                 if frame_ind == 2:
                     tables_names = ["IPE_EN10365", "IPN_EN10365"]
@@ -682,7 +687,7 @@ class BuildInterface(ctk.CTkFrame):
 
                 self.scrollable_button_frame = ScrollableButtonFrame(self, width=108, height=100, border_width=2,
                                                                      border_color=master.origEntBorderColor, )
-                self.scrollable_button_frame.grid(row=0, column=0, padx=(lpadx, 0), pady=(hpady + 15, lwpady),
+                self.scrollable_button_frame.grid(row=0, column=0, padx=(lpadx, 0), pady=(hpady + 5, lwpady),
                                                   rowspan=4, columnspan=1, sticky="nesw")
                 self.scrollable_button_frame._scrollbar.configure(height=0)  # bug, it's needed
                 self.scrollable_button_frame._scrollbar.grid(row=1, column=1, sticky="nsew", padx=(0, 3))
@@ -692,14 +697,14 @@ class BuildInterface(ctk.CTkFrame):
                 self.Sentry = ctk.CTkEntry(self, width=elem_width, placeholder_text="search", font=self.custom_font,
                                            justify=justify)  # image = image,
                 self.Sentry.bind("<KeyRelease>", lambda event: self.search(event, frame_ind))
-                self.Sentry.grid(row=0, column=1, padx=(lpadx2, 0), pady=(hpady + 15, lwpady))
+                self.Sentry.grid(row=0, column=1, padx=(lpadx2, 0), pady=(hpady + 5, lwpady))
 
         # options menu for standards
         self.combobox = CreateCombobox(self, [1, 1], [lpadx2, 0], [0, lwpady], combo_list, elem_width, self.custom_font,
                                        justify, frame_ind)
 
         self.dLabel = CreateLabels(self, [2, 1], [lpadx2, 0], [0, 0], elem_width, "w", 1)
-        self.dens_entry = CreateEntry(self, [3, 1], [lpadx2, 0], [0, lwpady], elem_width, "7850kg/cub.m",
+        self.dens_entry = CreateEntry(self, [3, 1], [lpadx2, 0], [0, lwpady + dens_tail], elem_width, "7850kg/cub.m",
                                       self.custom_font, vcmd_d, justify, 3, "w", 1, frame_ind)
         self.dens_entry.entry.configure(border_color=master.theme_color)
 
@@ -932,21 +937,60 @@ class ScrollableButtonFrame(ctk.CTkScrollableFrame):
 
 ###########################################################################################
 class ImageSide(ctk.CTkFrame):
-    def __init__(self, master):
+    """side for size illustration"""
+    def __init__(self, master, frame_ind):
         super().__init__(master)
-        #self.configure(fg_color="transparent")
-        image_name = "bigRec2.png"
-        image = ctk.CTkImage(Image.open(App.resource_path("assets\\" + image_name)), size=(293, 225))
+        self.configure(fg_color="transparent")
+        self.labels_parameters = [
+            [["H", 248, 115], ["W", 118, 188], ["t", 90, 68], ["R", 3, 12], ["r", 125, 114]],
+            [["d", 248, 115], ["t", 118, 188]],
+            [["d", 248, 115], ["t", 118, 188]],
+            [["d", 248, 115], ["t", 118, 188]],
+        ]
+        self.image_label_list = [[], [], [], []]
+        self.image_png_names = ["bigRec.png", "round_circle.png", "i-beam.png", "u_sect.png", ]
+        
+        self.create_imageside(frame_ind)
+
+    ##############################
+    def create_imageside(self, frame_ind):
+        """create image and labels"""
+        image = ctk.CTkImage(Image.open(App.resource_path("assets\\" + self.image_png_names[frame_ind])), size=(293, 225))
         self.label = ctk.CTkLabel(self, text="", image=image)
         self.label.pack()
-        self.label_h = ctk.CTkLabel(self.label, text="999.99", fg_color="transparent", font=('Helvetica', 13), height=13)
-        self.label_h.place(x=262, y=78)
-        self.label_w = ctk.CTkLabel(self.label, text="999.99", fg_color="transparent", font=('Helvetica', 13), height=13)
-        self.label_w.place(x=135, y=200)
+        for item in self.labels_parameters[frame_ind]:
+            label = ctk.CTkLabel(self.label, fg_color="transparent", font=('Helvetica', 14), height=13, width=30, anchor= "center",
+                                    text=item[0])
+            label.place(x=item[1], y=item[2])
+            self.image_label_list[frame_ind].append(label)
+
+    ##############################
+    def clear_imageside(self, frame_ind):
+        """clear parameters labels"""
+        for k, _label in enumerate(app.image_side_list[frame_ind].image_label_list[frame_ind]):
+            _label.configure(text=app.image_side_list[frame_ind].labels_parameters[frame_ind][k][0])
+
+    ##############################
+    def pollute_imageside(self, frame_ind, list_of_parameters):
+        """pollute labels on image side"""
+        if frame_ind == 0 or frame_ind == 1:
+            for j, par in enumerate(list_of_parameters):
+                if par.is_integer():
+                    par = int(par)
+                if j < 3:
+                    _text = str(par).replace(".", ",")
+                elif par == 0:
+                    _text = "N/S"
+                elif round(float(par), 1).is_integer():
+                    _text = str(int(round(par, 1))).replace(".", ",")
+                else:
+                    _text = str(round(par, 1)).replace(".", ",")
+                app.image_side_list[frame_ind].image_label_list[frame_ind][j].configure(text=_text)
+
 
 ###########################################################################################
 if __name__ == "__main__":
-    ctk.set_appearance_mode("system")  # Modes: system (default), light, dark
+    ctk.set_appearance_mode("dark")  # Modes: system (default), light, dark
     ctk.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
     app = App()
     app.mainloop()
