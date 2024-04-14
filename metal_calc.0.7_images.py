@@ -133,9 +133,8 @@ class App(ctk.CTk):
     def optionmenu_callback(self, frame_ind):
         """combobox, redirect to goto_count"""
         self.list_trick()
-        if frame_ind == 2:
+        if frame_ind in (2, 3):
             app.image_side.clear_imageside(frame_ind)
-            
             app.interface.Sentry.delete(0, "end")
             app.interface.Sentry.configure(placeholder_text="search")
             app.interface.scrollable_button_frame.button_chosen = "blank"
@@ -144,13 +143,18 @@ class App(ctk.CTk):
             for widget in app.interface.scrollable_button_frame.winfo_children():
                 widget.destroy()
             app.interface.scrollable_button_frame._parent_canvas.yview_moveto(0)
-            i = 0
-            if value != "EN10365 - IPE":  # , "EN10365 - IPN"]
-                i = 1
-            img = app.image_side.beams_images[i]
+            pair = [0, 0]
+            if frame_ind == 2:
+                if value != app.interface.combo_list[0]:
+                    pair = [1, 1]
+            elif frame_ind == 3:
+                if value == app.interface.combo_list[0]:
+                    pair[0] = 2
+                else:
+                    pair = [3, 1]
+            img = app.image_side.db_images[pair[0]]
             app.image_side.label_im.configure(image=img)
-            app.interface.scrollable_button_frame.add_items(app.interface.frame_list_of_sec_lists[i], frame_ind)
-            
+            app.interface.scrollable_button_frame.add_items(app.interface.frame_list_of_sec_lists[pair[1]], frame_ind)
         else:
             self.goto_count(frame_ind)
 
@@ -363,41 +367,36 @@ class App(ctk.CTk):
                     ri = 0.0
                     spreadsheet = ""
                     if standard == "EN10210":
-                        match frame_ind:
-                            case 0:
-                                ro = 1.5 * thickness
-                                ri = thickness
-                                # for database
-                                spreadsheet = "rectEN10210"
-                            case 1:
-                                spreadsheet = "circleEN10210"
+                        if frame_ind == 0:
+                            ro = 1.5 * thickness
+                            ri = thickness
+                        
+                        # for database
+                        spreadsheet = app.interface.spreadsheets_list[0]
                     elif standard == "EN10219":
-                        match frame_ind:
-                            case 0:
-                                if thickness <= 6:
-                                    ro = 2 * thickness
-                                    ri = thickness
-                                elif 6 < thickness <= 10:
-                                    ro = 2.5 * thickness
-                                    ri = 1.5 * thickness
-                                elif thickness > 10:
-                                    ro = 3 * thickness
-                                    ri = 2 * thickness
-                                spreadsheet = "rectEN10219"
-                            case 1:
-                                spreadsheet = "circleEN10219"
+                        if frame_ind == 0:
+                            if thickness <= 6:
+                                ro = 2 * thickness
+                                ri = thickness
+                            elif 6 < thickness <= 10:
+                                ro = 2.5 * thickness
+                                ri = 1.5 * thickness
+                            elif thickness > 10:
+                                ro = 3 * thickness
+                                ri = 2 * thickness
+                        spreadsheet = app.interface.spreadsheets_list[1]
                     else:
                         if thickness <= 2.5:
                             ro = 0.5 * thickness
                         else:
                             ro = 1.75 * thickness
                             ri = 0.75 * thickness
-                        spreadsheet = "rectEN10305"
+                        spreadsheet = app.interface.spreadsheets_list[2]
                     # counting
                     if frame_ind == 0:
                         area = round((2 * thickness * (width + height - 2 * thickness) - (4 - 3.141592) *
                                       (ro ** 2 - ri ** 2)) / 100, 5)
-                        app.image_side.pollute_imageside(frame_ind, [width, height, thickness, ro, ri])
+                        app.image_side.pollute_imageside(frame_ind, [height, width, thickness, ro, ri])
                     else:
                         area = round(3.141592 * (width ** 2 - (width - 2 * thickness) ** 2) / 400, 5)
                         app.image_side.pollute_imageside(frame_ind, [width, thickness])
@@ -437,17 +436,17 @@ class App(ctk.CTk):
                 self.list_trick()
                 profile_name = self.interface.scrollable_button_frame.button_chosen
                 standard = self.interface.combobox.combobox.get()
-                if standard == "EN10365 - IPE" and frame_ind == 2:
-                    spreadsheet = "IPE_EN10365"
-                elif standard == "EN10365 - IPN" and frame_ind == 2:
-                    spreadsheet = "IPN_EN10365"
+                
+                if standard == app.interface.combo_list[0]:
+                    spreadsheet = app.interface.spreadsheets_list[0]
                 else:
-                    spreadsheet = "PFC_EN10365"
+                    spreadsheet = app.interface.spreadsheets_list[1]
+
                 if profile_name != "blank":
                     self.cursor.execute("SELECT * FROM " + spreadsheet + " WHERE N like '%" + str(profile_name) + "%' ")
                     data = self.cursor.fetchall()
                     area = data[0][7]
-                    app.image_side.pollute_imageside(frame_ind, [data[0][4], data[0][3], data[0][6], data[0][5]])
+                    app.image_side.pollute_imageside(frame_ind, [data[0][3], data[0][4], data[0][6], data[0][5]])
                     
                     height = float(data[0][3])
                     if height.is_integer():
@@ -524,7 +523,10 @@ class App(ctk.CTk):
             "CREATE TABLE IF NOT EXISTS IPN_EN10365 ([N] REAL, [M] REAL, "
             "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
         self.cursor.execute("CREATE TABLE IF NOT EXISTS rectEN10305 ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
-
+        self.cursor.execute(
+            "CREATE TABLE IF NOT EXISTS CH_EN10365 ([N] REAL, [M] REAL, "
+            "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
+        
         conn.commit()
         # read and rewrite tables
         spreadsheet = pandas.read_excel("metalDB.xlsx", "10210")
@@ -551,8 +553,12 @@ class App(ctk.CTk):
         spreadsheet = pandas.read_excel("metalDB.xlsx", "10305-5")
         spreadsheet.to_sql(name='rectEN10305', con=conn, if_exists="replace")
 
-        # self.cursor.execute("SELECT * FROM IPE_EN10365 WHERE N = 'IPE 100' ")
+        spreadsheet = pandas.read_excel("metalDB.xlsx", "CH")
+        spreadsheet.to_sql(name='CH_EN10365', con=conn, if_exists="replace")
+
+        # self.cursor.execute("SELECT * FROM CH_EN10365 WHERE N = 'CH76x38x7' ")
         # data = self.cursor.fetchall()
+        # print(data)
 
         # conn.close()
 
@@ -617,14 +623,14 @@ class BuildInterface(ctk.CTkFrame):
         ###############
 
         # some paddings
-        lpadx = 30  # left padx
-        lpadx2 = 25  # left padx 2-nd column
+        lpadx = 20  # left padx
+        lpadx2 = 20  # left padx 2-nd column
         hpady = 0  # upper pady
         lwpady = 5  # lower pady
         justify = "left"
 
         # elements' width
-        elem_width = 135
+        elem_width = 140
         # for slider
         sl_lab_width = 30
         # fonts
@@ -632,15 +638,19 @@ class BuildInterface(ctk.CTkFrame):
 
         minus_row = 2
         if frame_ind == 0:
-            combo_list = ["EN10210", "EN10219", "EN10305-5"]
+            self.combo_list = ["EN10210", "EN10219", "EN10305-5"]
+            self.spreadsheets_list = ['rectEN10210', 'rectEN10219', 'rectEN10305']
             minus_row = 0
         elif frame_ind == 1:
-            combo_list = ["EN10210", "EN10219"]
+            self.combo_list = ["EN10210", "EN10219"]
+            self.spreadsheets_list = ['circleEN10210', 'circleEN10219']
         elif frame_ind == 2:
-            combo_list = ["EN10365 - IPE", "EN10365 - IPN"]
+            self.combo_list = ["EN10365 - IPE", "EN10365 - IPN"]
+            self.spreadsheets_list = ['IPE_EN10365', 'IPN_EN10365']
         else:
-            combo_list = ["EN10365"]
-
+            self.combo_list = ["EN10365 - PFC", "EN10365 - CH"]
+            self.spreadsheets_list = ['PFC_EN10365', 'CH_EN10365']
+            
             #######################
         # register validation
         vcmd_wht = (master.register(master.valid_wht))
@@ -674,18 +684,15 @@ class BuildInterface(ctk.CTkFrame):
                 self.frame_list_of_sec_lists = []
                 dens_tail = 10
                 remove_last = 0
-                if frame_ind == 2:
-                    tables_names = ["IPE_EN10365", "IPN_EN10365"]
-                else:
-                    tables_names = ["PFC_EN10365"]
+                if frame_ind != 2:
                     remove_last = 3
-                for i, every in enumerate(tables_names):
+                for i, every in enumerate(self.spreadsheets_list):
                     self.frame_list_of_sec_lists.append(list())
                     data = list(master.cursor.execute("SELECT N FROM " + every).fetchall())
                     for each in data:
                         self.frame_list_of_sec_lists[i].append(list(each)[0][:len(list(each)[0]) - remove_last])
 
-                self.scrollable_button_frame = ScrollableButtonFrame(self, width=108, height=100, border_width=2,
+                self.scrollable_button_frame = ScrollableButtonFrame(self, width=elem_width-26, height=100, border_width=2,
                                                                      border_color=master.origEntBorderColor, )
                 self.scrollable_button_frame.grid(row=0, column=0, padx=(lpadx, 0), pady=(hpady + 5, lwpady),
                                                   rowspan=4, columnspan=1, sticky="nesw")
@@ -700,7 +707,7 @@ class BuildInterface(ctk.CTkFrame):
                 self.Sentry.grid(row=0, column=1, padx=(lpadx2, lpadx), pady=(hpady + 5, lwpady))
 
         # options menu for standards
-        self.combobox = CreateCombobox(self, [1, 1], [lpadx2, lpadx], [0, lwpady], combo_list, elem_width, self.custom_font,
+        self.combobox = CreateCombobox(self, [1, 1], [lpadx2, lpadx], [0, lwpady], self.combo_list, elem_width, self.custom_font,
                                        justify, frame_ind)
 
         self.dLabel = CreateLabels(self, [2, 1], [lpadx2, lpadx], [0, 0], elem_width, "w", 1)
@@ -733,7 +740,7 @@ class BuildInterface(ctk.CTkFrame):
         
         standart = app.interface.combobox.combobox.get()
         i = 0
-        if standart == "EN10365 - IPN":
+        if standart != app.interface.combo_list[i]:
             i = 1
         value = event.widget.get()
         if value == "":
@@ -948,16 +955,16 @@ class ImageSide(ctk.CTkFrame):
             [["H", 0, 104], ["W", 115, 187], ["t", 238, 34], ["s", 135, 86]]
         ]
         self.image_label_list = [[], [], [], []]
-        self.beams_images = [
-            ctk.CTkImage(Image.open(App.resource_path("assets\\" + "bigBeam.png")), size=(293, 225)), 
-            ctk.CTkImage(Image.open(App.resource_path("assets\\" + "bigBeam_taper.png")), size=(293, 225))]
+        self.db_images = []
+        for each in ["bigBeam.png", "bigBeam_taper.png", "big_Usect.png", "big_Usect_taper.png"]:
+            self.db_images.append(ctk.CTkImage(Image.open(App.resource_path("assets\\" + each)), size=(293, 225)))
         self.image_png_names = ["bigRec.png", "bigCircle.png", "bigBeam.png", "big_Usect.png", ]
-        
         self.create_imageside(frame_ind)
 
     ##############################
     def create_imageside(self, frame_ind):
         """create image and labels"""
+
         image = ctk.CTkImage(Image.open(App.resource_path("assets\\" + self.image_png_names[frame_ind])), size=(293, 225))
         self.label_im = ctk.CTkLabel(self, text="", image=image)
         self.label_im.pack()
