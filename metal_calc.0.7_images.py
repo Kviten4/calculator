@@ -134,6 +134,8 @@ class App(ctk.CTk):
         """combobox, redirect to goto_count"""
         self.list_trick()
         if frame_ind == 2:
+            app.image_side.clear_imageside(frame_ind)
+            
             app.interface.Sentry.delete(0, "end")
             app.interface.Sentry.configure(placeholder_text="search")
             app.interface.scrollable_button_frame.button_chosen = "blank"
@@ -142,10 +144,13 @@ class App(ctk.CTk):
             for widget in app.interface.scrollable_button_frame.winfo_children():
                 widget.destroy()
             app.interface.scrollable_button_frame._parent_canvas.yview_moveto(0)
-            if value == "EN10365 - IPE":  # , "EN10365 - IPN"]
-                app.interface.scrollable_button_frame.add_items(app.interface.frame_list_of_sec_lists[0], frame_ind)
-            else:
-                app.interface.scrollable_button_frame.add_items(app.interface.frame_list_of_sec_lists[1], frame_ind)
+            i = 0
+            if value != "EN10365 - IPE":  # , "EN10365 - IPN"]
+                i = 1
+            img = app.image_side.beams_images[i]
+            app.image_side.label_im.configure(image=img)
+            app.interface.scrollable_button_frame.add_items(app.interface.frame_list_of_sec_lists[i], frame_ind)
+            
         else:
             self.goto_count(frame_ind)
 
@@ -442,17 +447,18 @@ class App(ctk.CTk):
                     self.cursor.execute("SELECT * FROM " + spreadsheet + " WHERE N like '%" + str(profile_name) + "%' ")
                     data = self.cursor.fetchall()
                     area = data[0][7]
-
+                    app.image_side.pollute_imageside(frame_ind, [data[0][4], data[0][3], data[0][6], data[0][5]])
+                    
                     height = float(data[0][3])
                     if height.is_integer():
                         height = int(height)
-                    if frame_ind == 2:
-                        sizes_text = (str(data[0][1]) + " (" + str(height).replace(".", ",") + "x" +
-                                      str(data[0][4]) + "x" + str(data[0][6]).replace(".", ",") + ")")
-                    else:
-                        sizes_text = (str(data[0][1]))
-                    standard = sizes_text  # ! caution
-
+                    # if frame_ind == 2:
+                    #     sizes_text = (str(data[0][1]) + " (" + str(height).replace(".", ",") + "x" +
+                    #                   str(data[0][4]) + "x" + str(data[0][6]).replace(".", ",") + ")")
+                    # else:
+                    #     sizes_text = (str(data[0][1]))
+                    # standard = sizes_text  # ! caution
+                    standard = standard.split(" ")[0] + " - " + str(data[0][1])
                     self.put_sumtext(area, standard)
                     self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
 
@@ -942,13 +948,16 @@ class ImageSide(ctk.CTkFrame):
         super().__init__(master)
         self.configure(fg_color="transparent")
         self.labels_parameters = [
-            [["H", 248, 115], ["W", 115, 188], ["t", 3, 117], ["R", 3, 11], ["r", 94, 56]],
-            [["D", 223, 24], ["t", 223, 172]],
-            [["d", 248, 115], ["t", 118, 188]],
-            [["d", 248, 115], ["t", 118, 188]],
+            [["H", 248, 114], ["W", 114, 188], ["t", 3, 117], ["R", 3, 11], ["r", 94, 56]],
+            [["D", 223, 23], ["t", 223, 172]],
+            [["H", 9, 104], ["W", 114, 187], ["t", 238, 34], ["s", 178, 120]],
+            [["d", 248, 115], ["t", 118, 188]]
         ]
         self.image_label_list = [[], [], [], []]
-        self.image_png_names = ["bigRec.png", "bigCircle.png", "i-beam.png", "u_sect.png", ]
+        self.beams_images = [
+            ctk.CTkImage(Image.open(App.resource_path("assets\\" + "bigBeam.png")), size=(293, 225)), 
+            ctk.CTkImage(Image.open(App.resource_path("assets\\" + "bigBeam_taper.png")), size=(293, 225))]
+        self.image_png_names = ["bigRec.png", "bigCircle.png", "bigBeam.png", "u_sect.png", ]
         
         self.create_imageside(frame_ind)
 
@@ -956,10 +965,10 @@ class ImageSide(ctk.CTkFrame):
     def create_imageside(self, frame_ind):
         """create image and labels"""
         image = ctk.CTkImage(Image.open(App.resource_path("assets\\" + self.image_png_names[frame_ind])), size=(293, 225))
-        self.label = ctk.CTkLabel(self, text="", image=image)
-        self.label.pack()
+        self.label_im = ctk.CTkLabel(self, text="", image=image)
+        self.label_im.pack()
         for item in self.labels_parameters[frame_ind]:
-            label = ctk.CTkLabel(self.label, font=('Helvetica', 14), height=13, width=35, anchor= "center",
+            label = ctk.CTkLabel(self.label_im, fg_color="transparent", font=('Helvetica', 14), height=13, width=35, anchor= "center",
                                     text=item[0])
             label.place(x=item[1], y=item[2])
             self.image_label_list[frame_ind].append(label)
@@ -973,20 +982,24 @@ class ImageSide(ctk.CTkFrame):
     ##############################
     def pollute_imageside(self, frame_ind, list_of_parameters):
         """pollute labels on image side"""
-        if frame_ind == 0 or frame_ind == 1:
-            for j, par in enumerate(list_of_parameters):
-                if par.is_integer():
-                    par = int(par)
-                if j < 3:
+        for j, par in enumerate(list_of_parameters):
+            match frame_ind:
+                case 0 | 1:
+                    if par.is_integer():
+                        par = int(par)
+                    if j < 3:
+                        _text = str(par).replace(".", ",")
+                    elif par == 0:
+                        _text = "N/S"
+                    elif round(float(par), 1).is_integer():
+                        _text = str(int(round(par, 1))).replace(".", ",")
+                    else:
+                        _text = str(round(par, 1)).replace(".", ",")
+                case 2 | 3:
+                    if float(par).is_integer():
+                        par = int(par)
                     _text = str(par).replace(".", ",")
-                elif par == 0:
-                    _text = "N/S"
-                elif round(float(par), 1).is_integer():
-                    _text = str(int(round(par, 1))).replace(".", ",")
-                else:
-                    _text = str(round(par, 1)).replace(".", ",")
-                app.image_side_list[frame_ind].image_label_list[frame_ind][j].configure(text=_text)
-
+            app.image_side_list[frame_ind].image_label_list[frame_ind][j].configure(text=_text)
 
 ###########################################################################################
 if __name__ == "__main__":
