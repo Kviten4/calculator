@@ -942,13 +942,13 @@ class ImageSide(ctk.CTkFrame):
         super().__init__(master)
         self.configure(fg_color="transparent")
         self.labels_parameters = [
-            [["H", 248, 115], ["W", 118, 188], ["t", 90, 68], ["R", 3, 12], ["r", 125, 114]],
-            [["d", 248, 115], ["t", 118, 188]],
+            [["H", 248, 115], ["W", 115, 188], ["t", 3, 117], ["R", 3, 11], ["r", 94, 56]],
+            [["D", 223, 24], ["t", 223, 172]],
             [["d", 248, 115], ["t", 118, 188]],
             [["d", 248, 115], ["t", 118, 188]],
         ]
         self.image_label_list = [[], [], [], []]
-        self.image_png_names = ["bigRec.png", "round_circle.png", "i-beam.png", "u_sect.png", ]
+        self.image_png_names = ["bigRec.png", "bigCircle.png", "i-beam.png", "u_sect.png", ]
         
         self.create_imageside(frame_ind)
 
@@ -959,7 +959,7 @@ class ImageSide(ctk.CTkFrame):
         self.label = ctk.CTkLabel(self, text="", image=image)
         self.label.pack()
         for item in self.labels_parameters[frame_ind]:
-            label = ctk.CTkLabel(self.label, fg_color="transparent", font=('Helvetica', 14), height=13, width=30, anchor= "center",
+            label = ctk.CTkLabel(self.label, font=('Helvetica', 14), height=13, width=35, anchor= "center",
                                     text=item[0])
             label.place(x=item[1], y=item[2])
             self.image_label_list[frame_ind].append(label)
