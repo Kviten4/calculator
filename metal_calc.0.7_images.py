@@ -43,7 +43,7 @@ class App(ctk.CTk):
 
         # menu
         self.upper_menu = UpperMenu(self)
-        self.upper_menu.grid(row=0, column=0, pady=(10, 10), padx=(30, 0), sticky="", columnspan = 2)
+        self.upper_menu.grid(row=0, column=0, pady=(10, 10), padx=(30, 0), sticky="", columnspan=2)
 
         # side image with parameters
         self.image_side_list = [ImageSide(self, 0), ImageSide(self, 1), ImageSide(self, 2), ImageSide(self, 3)]
@@ -51,7 +51,8 @@ class App(ctk.CTk):
         self.image_side.grid(row=1, column=0, pady=(0, 0), padx=(30, 0), sticky="nw")
 
         # interface
-        self.windows_list = [BuildInterface(self, 0), BuildInterface(self, 1), BuildInterface(self, 2), BuildInterface(self, 3)]
+        self.windows_list = [BuildInterface(self, 0), BuildInterface(self, 1),
+                             BuildInterface(self, 2), BuildInterface(self, 3)]
         self.interface = self.windows_list[0]
         self.interface.grid(row=1, column=1, pady=(0, 0), padx=(0, 0), sticky="nw")
 
@@ -61,9 +62,9 @@ class App(ctk.CTk):
 
         # list for errLabels indexes
         ErLabLi = [self.windows_list[0].wLabel.label, self.windows_list[0].hLabel.label, self.windows_list[0].tLabel.label,
-                        self.windows_list[0].dLabel.label, self.windows_list[0].sumLabel.label]
+                   self.windows_list[0].dLabel.label, self.windows_list[0].sumLabel.label]
         ErLabLi1 = [self.windows_list[1].wLabel.label, "", self.windows_list[1].tLabel.label, self.windows_list[1].dLabel.label,
-                         self.windows_list[1].sumLabel.label]
+                    self.windows_list[1].sumLabel.label]
         ErLabLi2 = ["", "", "", self.windows_list[2].dLabel.label, self.windows_list[2].sumLabel.label]
         ErLabLi3 = ["", "", "", self.windows_list[3].dLabel.label, self.windows_list[3].sumLabel.label]
         self.list_of_labels_lists = [ErLabLi, ErLabLi1, ErLabLi2, ErLabLi3]
@@ -72,9 +73,9 @@ class App(ctk.CTk):
 
         # list of entries
         entrLst = [self.windows_list[0].width_entry.entry, self.windows_list[0].height_entry.entry,
-                        self.windows_list[0].thickness_entry.entry, self.windows_list[0].dens_entry.entry, self.windows_list[0].sumEntry.entry]
+                   self.windows_list[0].thickness_entry.entry, self.windows_list[0].dens_entry.entry, self.windows_list[0].sumEntry.entry]
         entrLst1 = [self.windows_list[1].width_entry.entry, "", self.windows_list[1].thickness_entry.entry,
-                         self.windows_list[1].dens_entry.entry, self.windows_list[1].sumEntry.entry]
+                    self.windows_list[1].dens_entry.entry, self.windows_list[1].sumEntry.entry]
         entrLst2 = ["", "", "", self.windows_list[2].dens_entry.entry, self.windows_list[2].sumEntry.entry]
         entrLst3 = ["", "", "", self.windows_list[3].dens_entry.entry, self.windows_list[3].sumEntry.entry]
         self.list_of_entries_lists = [entrLst, entrLst1, entrLst2, entrLst3]
@@ -365,7 +366,6 @@ class App(ctk.CTk):
                     standard = self.interface.combobox.combobox.get()
                     ro = 0.0
                     ri = 0.0
-                    spreadsheet = ""
                     if standard == "EN10210":
                         if frame_ind == 0:
                             ro = 1.5 * thickness
@@ -401,8 +401,6 @@ class App(ctk.CTk):
                         area = round(3.141592 * (width ** 2 - (width - 2 * thickness) ** 2) / 400, 5)
                         app.image_side.pollute_imageside(frame_ind, [width, thickness])
 
-                    self.put_sumtext(area, standard)
-
                     # search in database
                     match frame_ind:
                         case 0:
@@ -419,9 +417,10 @@ class App(ctk.CTk):
                             self.cursor.execute(
                                 "SELECT * FROM " + spreadsheet + " WHERE W =" + str(width) + " and T =" + str(
                                     thickness))
-                    data01 = self.cursor.fetchall()
+                    data = self.cursor.fetchall()
+                    self.put_sumtext(frame_ind, data, standard, area)
 
-                    if len(data01) == 0:
+                    if len(data) == 0:
                         self.ErLabList[4].configure(text="this size is not in the standard")
                         self.entriesList[4].configure(state="readonly", border_color=app.densChangedC)
                     else:
@@ -445,14 +444,9 @@ class App(ctk.CTk):
                 if profile_name != "blank":
                     self.cursor.execute("SELECT * FROM " + spreadsheet + " WHERE N like '%" + str(profile_name) + "%' ")
                     data = self.cursor.fetchall()
-                    area = data[0][7]
                     app.image_side.pollute_imageside(frame_ind, [data[0][3], data[0][4], data[0][6], data[0][5]])
-                    
-                    height = float(data[0][3])
-                    if height.is_integer():
-                        height = int(height)
                     standard = standard.split(" ")[0] + " - " + str(data[0][1])
-                    self.put_sumtext(area, standard)
+                    self.put_sumtext(frame_ind, data, standard)
                     self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
 
     #############################
@@ -468,33 +462,35 @@ class App(ctk.CTk):
                 self.clear_label("2")
             return True
 
-    ##############################
-    def get_mass(self, area):
-        """return mass and length"""
+##############################
+    def put_sumtext(self, frame_ind, data, standard, *args):
+        """put sum text in result entry"""
         length = int(self.interface.slider.slider.get())
-        # get density
+        if frame_ind == 0:
+            i = 4
+        elif frame_ind == 1:
+            i = 3
+        else:
+            i = 2
         try:
             density = float(self.entriesList[3].get()) / 10000
         except (Exception,):
             density = 0.785
-        mass = round(density * area, 2)
+        if len(data) > 0:
+            mass = data[0][i]
+            if density != 0.785:
+                mass = round(mass*density/0.785, 2)
+        else:
+            mass = round(density * args[0], 2)
         mass = round(mass * length, 2)
         # remove ",oo" if necessary
         if mass.is_integer():
             mass = int(mass)
-        return mass, length
-
-    ##############################
-    def put_sumtext(self, area, standard):
-        """put sum text in result entry"""
-        mass, length = self.get_mass(area)
-
         sumtext = standard + " - " + str(length) + "m - " + str(mass).replace(".", ",") + "kg"
 
         self.entriesList[4].configure(state="normal")
         self.entriesList[4].delete("0", "end")
         self.entriesList[4].insert(0, sumtext)
-
 
     ##############################
     def clear_result_entry(self):
@@ -707,8 +703,8 @@ class BuildInterface(ctk.CTkFrame):
                 self.Sentry.grid(row=0, column=1, padx=(lpadx2, lpadx), pady=(hpady + 5, lwpady))
 
         # options menu for standards
-        self.combobox = CreateCombobox(self, [1, 1], [lpadx2, lpadx], [0, lwpady], self.combo_list, elem_width, self.custom_font,
-                                       justify, frame_ind)
+        self.combobox = CreateCombobox(self, [1, 1], [lpadx2, lpadx], [0, lwpady], self.combo_list, elem_width,
+                                       self.custom_font, justify, frame_ind)
 
         self.dLabel = CreateLabels(self, [2, 1], [lpadx2, lpadx], [0, 0], elem_width, "w", 1)
         self.dens_entry = CreateEntry(self, [3, 1], [lpadx2, lpadx], [0, lwpady + dens_tail], elem_width, "7850kg/cub.m",
@@ -852,9 +848,9 @@ class CreateCombobox:
         self.dropdown_menu.geometry(str(self.dropdown_menu.width) + 'x' + str(self.dropdown_menu.height) + '+'
                                     + str(x) + '+' + str(y))
         self.dropdown_menu.focus()
-        self.frame = ctk.CTkFrame(self.dropdown_menu, border_color=app.origEntBorderColor, border_width=2,
-                                  width=self.dropdown_menu.width, height=self.dropdown_menu.height)
-        self.frame.grid(row=0, column=0)
+        self.frame_dropdown = ctk.CTkFrame(self.dropdown_menu, border_color=app.origEntBorderColor, border_width=2,
+                                           width=self.dropdown_menu.width, height=self.dropdown_menu.height)
+        self.frame_dropdown.grid(row=0, column=0)
 
         self.dropdown_menu.bind("<FocusOut>", self.hide_dropdown)
 
@@ -885,7 +881,7 @@ class CreateCombobox:
         app.optionmenu_callback(frame_ind)
 
     ############
-    def hide_dropdown(self, event = None):
+    def hide_dropdown(self, event=None):
         """close dropdown menu"""
         self.dropdown_menu.withdraw()
         app.interface.focus()
@@ -969,19 +965,21 @@ class ImageSide(ctk.CTkFrame):
         self.label_im = ctk.CTkLabel(self, text="", image=image)
         self.label_im.pack()
         for item in self.labels_parameters[frame_ind]:
-            label = ctk.CTkLabel(self.label_im, fg_color="transparent", font=('Helvetica', 14), height=13, width=34, anchor= "center",
-                                    text=item[0])
+            label = ctk.CTkLabel(self.label_im, fg_color="transparent", font=('Helvetica', 14), height=13, width=34,
+                                 anchor="center", text=item[0])
             label.place(x=item[1], y=item[2])
             self.image_label_list[frame_ind].append(label)
 
     ##############################
-    def clear_imageside(self, frame_ind):
+    @staticmethod
+    def clear_imageside(frame_ind):
         """clear parameters labels"""
         for k, _label in enumerate(app.image_side_list[frame_ind].image_label_list[frame_ind]):
             _label.configure(text=app.image_side_list[frame_ind].labels_parameters[frame_ind][k][0])
 
     ##############################
-    def pollute_imageside(self, frame_ind, list_of_parameters):
+    @staticmethod
+    def pollute_imageside(frame_ind, list_of_parameters):
         """pollute labels on image side"""
         for j, par in enumerate(list_of_parameters):
             match frame_ind:
@@ -1002,7 +1000,8 @@ class ImageSide(ctk.CTkFrame):
                     _text = str(par).replace(".", ",")
             app.image_side_list[frame_ind].image_label_list[frame_ind][j].configure(text=_text)
 
-###########################################################################################
+
+#########################################################################################
 if __name__ == "__main__":
     ctk.set_appearance_mode("dark")  # Modes: system (default), light, dark
     ctk.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
