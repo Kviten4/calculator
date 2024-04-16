@@ -36,6 +36,12 @@ class App(ctk.CTk):
         # density special border color
         self.densChangedC = "#f95c00"  # orange
 
+        # spreadsheets lists
+        self.rect_spr_list = ["rectEN10210", "rectEN10219", "rectEN10305"]
+        self.circle_spr_list = ["circleEN10210", "circleEN10219"]
+        self.beam_spr_list = ["IPE_EN10365", "IPN_EN10365"]
+        self.channel_spr_list = ["PFC_EN10365", "CH_EN10365", "UPE_EN10365", "UPN_EN10365", "U_EN10365"]
+
         # database
         conn = sqlite3.connect(self.resource_path("database\\metalDB.db"))
         self.cursor = conn.cursor()
@@ -112,17 +118,6 @@ class App(ctk.CTk):
         return os.path.join(base_path, relative_path)
 
     ########################
-    def popup_info(self):
-        """info"""
-        CTkMessagebox(self, title="Info", justify="center", icon_size=(30, 30), button_height=28,
-                      font=('Helvetica', 14),
-                      message="Formulas and data sources:\nhollow sections:\n\
-    EN10210-2:2006 p.14-15\n\
-    EN10219-2:2006 p.20-22\n    EN10305-5:2016 p.13-15\nI sections:\n\
-    EN10365:2017 p.8-10, p.27\nchannels:\n    EN10365:2017 p.29\n\
-    \n\ntested by Flawless\ncreated by Kviten4")
-
-    ########################
     def sliding(self, value, frame_ind):
         """show slide value"""
         self.list_trick()
@@ -140,24 +135,25 @@ class App(ctk.CTk):
             app.interface.Sentry.configure(placeholder_text="search")
             app.interface.scrollable_button_frame.button_chosen = "blank"
             app.clear_result_entry()
-            value = app.interface.combobox.combobox.get()
+            standard = app.interface.combobox.combobox.get()
             for widget in app.interface.scrollable_button_frame.winfo_children():
                 widget.destroy()
             app.interface.scrollable_button_frame._parent_canvas.yview_moveto(0)
-            pair = [0, 0]
-            if frame_ind == 2:
-                if value != app.interface.combo_list[0]:
-                    pair = [1, 1]
-            elif frame_ind == 3:
-                if value == app.interface.combo_list[0]:
-                    pair[0] = 2
-                else:
-                    pair = [3, 1]
-            img = app.image_side.db_images[pair[0]]
-            app.image_side.label_im.configure(image=img)
-            app.interface.scrollable_button_frame.add_items(app.interface.frame_list_of_sec_lists[pair[1]], frame_ind)
+            i = app.find_standard_index(standard)
+
+            ind = app.interface.combo_dict[standard]
+            app.interface.scrollable_button_frame.add_items(app.interface.frame_list_of_sec_lists[i], frame_ind)
+            app.image_side.label_im.configure(image=app.image_side.db_images[ind])
         else:
             self.goto_count(frame_ind)
+
+    ########################
+    @staticmethod
+    def find_standard_index(standard):
+        """find standard's index"""
+        for i, each in enumerate(app.interface.combo_list):
+            if standard == each:
+                return i
 
     ########################
     def add_validation(self, event):
@@ -436,10 +432,8 @@ class App(ctk.CTk):
                 profile_name = self.interface.scrollable_button_frame.button_chosen
                 standard = self.interface.combobox.combobox.get()
                 
-                if standard == app.interface.combo_list[0]:
-                    spreadsheet = app.interface.spreadsheets_list[0]
-                else:
-                    spreadsheet = app.interface.spreadsheets_list[1]
+                i = app.find_standard_index(standard)
+                spreadsheet = app.interface.spreadsheets_list[i]
 
                 if profile_name != "blank":
                     self.cursor.execute("SELECT * FROM " + spreadsheet + " WHERE N like '%" + str(profile_name) + "%' ")
@@ -477,7 +471,7 @@ class App(ctk.CTk):
         except (Exception,):
             density = 0.785
         if len(data) > 0:
-            mass = data[0][i]
+            mass = float(data[0][i])
             if density != 0.785:
                 mass = round(mass*density/0.785, 2)
         else:
@@ -505,53 +499,26 @@ class App(ctk.CTk):
     #############################
     def create_table(self, conn):
         """create new table for database"""
-        self.cursor.execute("CREATE TABLE IF NOT EXISTS rectEN10210 ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
-        self.cursor.execute("CREATE TABLE IF NOT EXISTS rectEN10219 ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
-        self.cursor.execute("CREATE TABLE IF NOT EXISTS circleEN10210 ([W] REAL, [T] REAL, [M] REAL)")
-        self.cursor.execute("CREATE TABLE IF NOT EXISTS circleEN10219 ([W] REAL, [T] REAL, [M] REAL)")
-        self.cursor.execute(
-            "CREATE TABLE IF NOT EXISTS IPE_EN10365 ([N] REAL, [M] REAL, "
-            "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
-        self.cursor.execute(
-            "CREATE TABLE IF NOT EXISTS PFC_EN10365 ([N] REAL, [M] REAL, "
-            "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
-        self.cursor.execute(
-            "CREATE TABLE IF NOT EXISTS IPN_EN10365 ([N] REAL, [M] REAL, "
-            "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
-        self.cursor.execute("CREATE TABLE IF NOT EXISTS rectEN10305 ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
-        self.cursor.execute(
-            "CREATE TABLE IF NOT EXISTS CH_EN10365 ([N] REAL, [M] REAL, "
-            "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
+        excel_tables = ["R10210", "R10219", "R10305-5",
+                        "C10210", "C10219",
+                        "IPE", "IPN",
+                        "PFC", "CH", "UPE", "UPN", "U"]
+        for j, each in enumerate(self.rect_spr_list + self.circle_spr_list +
+                                 self.beam_spr_list + self.channel_spr_list):
+            if j < 3:
+                self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
+            elif j < 5:
+                self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([W] REAL, [T] REAL, [M] REAL)")
+            else:
+                self.cursor.execute(
+                    "CREATE TABLE IF NOT EXISTS " + each + " ([N] REAL, [M] REAL, "
+                    "[h] REAL, [b] REAL, [s] REAL, [t] REAL, [A] REAL)")
+            
+            conn.commit()
+            # read and rewrite tables
+            spreadsheet = pandas.read_excel("metalDB.xlsx", excel_tables[j])
+            spreadsheet.to_sql(name=each, con=conn, if_exists="replace")
         
-        conn.commit()
-        # read and rewrite tables
-        spreadsheet = pandas.read_excel("metalDB.xlsx", "10210")
-        spreadsheet.to_sql(name='rectEN10210', con=conn, if_exists="replace")
-
-        spreadsheet = pandas.read_excel("metalDB.xlsx", "10219")
-        spreadsheet.to_sql(name='rectEN10219', con=conn, if_exists="replace")
-
-        spreadsheet = pandas.read_excel("metalDB.xlsx", "C10210")
-        spreadsheet.to_sql(name='circleEN10210', con=conn, if_exists="replace")
-
-        spreadsheet = pandas.read_excel("metalDB.xlsx", "C10219")
-        spreadsheet.to_sql(name='circleEN10219', con=conn, if_exists="replace")
-
-        spreadsheet = pandas.read_excel("metalDB.xlsx", "IPE")
-        spreadsheet.to_sql(name='IPE_EN10365', con=conn, if_exists="replace")
-
-        spreadsheet = pandas.read_excel("metalDB.xlsx", "IPN")
-        spreadsheet.to_sql(name='IPN_EN10365', con=conn, if_exists="replace")
-
-        spreadsheet = pandas.read_excel("metalDB.xlsx", "PFC")
-        spreadsheet.to_sql(name='PFC_EN10365', con=conn, if_exists="replace")
-
-        spreadsheet = pandas.read_excel("metalDB.xlsx", "10305-5")
-        spreadsheet.to_sql(name='rectEN10305', con=conn, if_exists="replace")
-
-        spreadsheet = pandas.read_excel("metalDB.xlsx", "CH")
-        spreadsheet.to_sql(name='CH_EN10365', con=conn, if_exists="replace")
-
         # self.cursor.execute("SELECT * FROM CH_EN10365 WHERE N = 'CH76x38x7' ")
         # data = self.cursor.fetchall()
         # print(data)
@@ -592,15 +559,26 @@ class UpperMenu(ctk.CTkFrame):
         self.buttonList[column].configure(fg_color=app.hoverBtColor)
         app.change_interface(column)
 
+    #############
+    def popup_info(self):
+        """info"""
+        CTkMessagebox(self.master, title="Info", justify="center", icon_size=(30, 30), button_height=28,
+                      font=('Helvetica', 14),
+                      message="Formulas and data sources:\nhollow sections:\n\
+    EN10210-2:2006 p.14-15\n\
+    EN10219-2:2006 p.20-22\n    EN10305-5:2016 p.13-15\nI sections:\n\
+    EN10365:2017 p.8-10, p.27\nchannels:\n    EN10365:2017 p.28-31\n\
+    \n\ntested by Flawless\ncreated by Kviten4")
 
-#########
+
+##################
 class MenuButton:
     """buttons for upper menu"""
 
     def __init__(self, master, column, image_name, hover_color):
         super().__init__()
         if image_name == "information.png":
-            comm = master.master.popup_info
+            comm = master.popup_info
         else:
             comm = lambda: master.change_fg(column)
         image = ctk.CTkImage(Image.open(App.resource_path("assets\\" + image_name)), size=(28, 28))
@@ -635,17 +613,19 @@ class BuildInterface(ctk.CTkFrame):
         minus_row = 2
         if frame_ind == 0:
             self.combo_list = ["EN10210", "EN10219", "EN10305-5"]
-            self.spreadsheets_list = ['rectEN10210', 'rectEN10219', 'rectEN10305']
+            self.spreadsheets_list = master.rect_spr_list
             minus_row = 0
         elif frame_ind == 1:
             self.combo_list = ["EN10210", "EN10219"]
-            self.spreadsheets_list = ['circleEN10210', 'circleEN10219']
+            self.spreadsheets_list = master.circle_spr_list
         elif frame_ind == 2:
-            self.combo_list = ["EN10365 - IPE", "EN10365 - IPN"]
-            self.spreadsheets_list = ['IPE_EN10365', 'IPN_EN10365']
+            self.combo_dict = {"EN10365 - IPE": 0, "EN10365 - IPN": 1}
+            self.combo_list = list(self.combo_dict.keys())
+            self.spreadsheets_list = master.beam_spr_list
         else:
-            self.combo_list = ["EN10365 - PFC", "EN10365 - CH"]
-            self.spreadsheets_list = ['PFC_EN10365', 'CH_EN10365']
+            self.combo_dict = {"EN10365 - PFC": 0, "EN10365 - CH": 1, "EN10365 - UPE": 0, "EN10365 - UPN": 1, "EN10365 - U": 1}
+            self.combo_list = list(self.combo_dict.keys())
+            self.spreadsheets_list = master.channel_spr_list
             
             #######################
         # register validation
@@ -679,11 +659,12 @@ class BuildInterface(ctk.CTkFrame):
                 # get list of profiles
                 self.frame_list_of_sec_lists = []
                 dens_tail = 10
-                remove_last = 0
-                if frame_ind != 2:
-                    remove_last = 3
                 for i, every in enumerate(self.spreadsheets_list):
                     self.frame_list_of_sec_lists.append(list())
+                    if i < 2 and frame_ind == 3:
+                        remove_last = 3
+                    else:
+                        remove_last = 0
                     data = list(master.cursor.execute("SELECT N FROM " + every).fetchall())
                     for each in data:
                         self.frame_list_of_sec_lists[i].append(list(each)[0][:len(list(each)[0]) - remove_last])
@@ -696,9 +677,8 @@ class BuildInterface(ctk.CTkFrame):
                 self.scrollable_button_frame._scrollbar.grid(row=1, column=1, sticky="nsew", padx=(0, 3))
                 self.scrollable_button_frame.add_items(self.frame_list_of_sec_lists[0], frame_ind)
 
-                # image = ctk.CTkImage(Image.open(App.resource_path("assets\\search-50.png")), size=(28, 28))
                 self.Sentry = ctk.CTkEntry(self, width=elem_width, placeholder_text="search", font=self.custom_font,
-                                           justify=justify)  # image = image,
+                                           justify=justify)
                 self.Sentry.bind("<KeyRelease>", lambda event: self.search(event, frame_ind))
                 self.Sentry.grid(row=0, column=1, padx=(lpadx2, lpadx), pady=(hpady + 5, lwpady))
 
@@ -734,10 +714,9 @@ class BuildInterface(ctk.CTkFrame):
         """search in scrollable frame"""
         event.widget.configure(state="disabled")
         
-        standart = app.interface.combobox.combobox.get()
-        i = 0
-        if standart != app.interface.combo_list[i]:
-            i = 1
+        standard = app.interface.combobox.combobox.get()
+        i = app.find_standard_index(standard)
+
         value = event.widget.get()
         if value == "":
             data = self.frame_list_of_sec_lists[i]
@@ -860,7 +839,7 @@ class CreateCombobox:
     ############
     def add_btn(self, i, each, length, frame_ind):
         """add buttons to the dropdown menu"""
-        button = ctk.CTkButton(self.frame, text=each, fg_color="transparent", width=self.dropdown_menu.width - 5,
+        button = ctk.CTkButton(self.frame_dropdown, text=each, fg_color="transparent", width=self.dropdown_menu.width - 5,
                                font=app.interface.custom_font,
                                command=lambda: self.close_toplevel(each, frame_ind), corner_radius=3, anchor="w",
                                text_color=app.textColor)
@@ -952,7 +931,15 @@ class ImageSide(ctk.CTkFrame):
         ]
         self.image_label_list = [[], [], [], []]
         self.db_images = []
-        for each in ["bigBeam.png", "bigBeam_taper.png", "big_Usect.png", "big_Usect_taper.png"]:
+        db_images_beams = ["bigBeam.png", "bigBeam_taper.png"]
+        db_images_channels = ["big_Usect.png", "big_Usect_taper.png"]
+
+        images_list = []
+        if frame_ind == 2:
+            images_list = db_images_beams
+        elif frame_ind == 3:
+            images_list = db_images_channels
+        for each in images_list:
             self.db_images.append(ctk.CTkImage(Image.open(App.resource_path("assets\\" + each)), size=(293, 225)))
         self.image_png_names = ["bigRec.png", "bigCircle.png", "bigBeam.png", "big_Usect.png", ]
         self.create_imageside(frame_ind)
@@ -987,18 +974,18 @@ class ImageSide(ctk.CTkFrame):
                     if par.is_integer():
                         par = int(par)
                     if j < 3:
-                        _text = str(par).replace(".", ",")
+                        lb_txt = str(par).replace(".", ",")
                     elif par == 0:
-                        _text = "N/S"
+                        lb_txt = "N/S"
                     elif round(float(par), 1).is_integer():
-                        _text = str(int(round(par, 1))).replace(".", ",")
+                        lb_txt = str(int(round(par, 1))).replace(".", ",")
                     else:
-                        _text = str(round(par, 1)).replace(".", ",")
+                        lb_txt = str(round(par, 1)).replace(".", ",")
                 case 2 | 3:
                     if float(par).is_integer():
                         par = int(par)
-                    _text = str(par).replace(".", ",")
-            app.image_side_list[frame_ind].image_label_list[frame_ind][j].configure(text=_text)
+                    lb_txt = str(par).replace(".", ",")
+            app.image_side_list[frame_ind].image_label_list[frame_ind][j].configure(text=lb_txt)
 
 
 #########################################################################################
