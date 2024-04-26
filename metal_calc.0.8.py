@@ -38,7 +38,8 @@ class App(ctk.CTk):
 
         # spreadsheets lists
         self.rect_spr_list = ["rectEN10210", "rectEN10219", "rectEN10305", "D8940"]
-        self.circle_spr_list = ["circleEN10210", "circleEN10219"]
+        self.circle_spr_list = ["circleEN10210", "circleEN10219", "en10297p1"]
+        self.circle_spr_extra_dict = {2: "en10297p2"}
         self.beam_spr_list = ["IPE_EN10365", "IPN_EN10365"]
         self.channel_spr_list = ["PFC_EN10365", "CH_EN10365", "UPE_EN10365", "UPN_EN10365", "U_EN10365"]
 
@@ -364,15 +365,15 @@ class App(ctk.CTk):
                 if indicator:
                     standard = self.interface.combobox.combobox.get()
                     # get standard's index
-                    i = app.find_standard_index(standard)
+                    index = app.find_standard_index(standard)
                     spreadsheet = app.interface.spreadsheets_list[i]
                     ro = 0.0
                     ri = 0.0
                     if frame_ind == 0:
-                        if i == 0:
+                        if index == 0:
                             ro = 1.5 * thickness
                             ri = thickness
-                        elif i == 1:
+                        elif index == 1:
                             if thickness <= 6:
                                 ro = 2 * thickness
                                 ri = thickness
@@ -382,7 +383,7 @@ class App(ctk.CTk):
                             elif thickness > 10:
                                 ro = 3 * thickness
                                 ri = 2 * thickness
-                        elif i == 2:
+                        elif index == 2:
                             if thickness <= 2.5:
                                 ro = 0.5 * thickness
                             else:
@@ -405,9 +406,18 @@ class App(ctk.CTk):
                                         width) + ")) and T =" + str(thickness))
                             app.image_side.pollute_imageside(frame_ind, [height, width, thickness, ro, ri])
                         case 1:
-                            self.cursor.execute(
-                                "SELECT * FROM " + spreadsheet + " WHERE W =" + str(width) + " and T =" + str(
-                                    thickness))
+                            if index < 2:
+                                self.cursor.execute(
+                                    "SELECT * FROM " + spreadsheet + " WHERE W =" + str(width) + " and T =" + str(
+                                        thickness))
+                            else:
+                                self.cursor.execute(
+                                    "SELECT * FROM " + spreadsheet + " WHERE T =" + str(thickness))
+                                data = self.cursor.fetchall()
+                                if len(data) > 0:
+                                    col_ind = data[0][0]
+                                    self.cursor.execute(
+                                        "SELECT * FROM " + app.circle_spr_extra_dict[index] + " WHERE D =" + str(width))
                             app.image_side.pollute_imageside(frame_ind, [width, thickness])
                     data = self.cursor.fetchall()
 
@@ -425,7 +435,10 @@ class App(ctk.CTk):
                         self.entriesList[4].configure(state="readonly", border_color=app.densChangedC)
                     else:
                         self.clear_label(4)
-                        self.put_sumtext(frame_ind, data, standard, decimals)
+                        if index == 2 and frame_ind == 1:
+                            self.put_sumtext(frame_ind, data, standard, decimals, col_ind)
+                        else:
+                            self.put_sumtext(frame_ind, data, standard, decimals)
                         self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
 
                 else:
@@ -437,8 +450,8 @@ class App(ctk.CTk):
                 profile_name = self.interface.scrollable_button_frame.button_chosen
                 standard = self.interface.combobox.combobox.get()
                 
-                i = app.find_standard_index(standard)
-                spreadsheet = app.interface.spreadsheets_list[i]
+                index = app.find_standard_index(standard)
+                spreadsheet = app.interface.spreadsheets_list[index]
 
                 if profile_name != "blank":
                     self.cursor.execute("SELECT * FROM " + spreadsheet + " WHERE N like '%" + str(profile_name) + "%' ")
@@ -474,12 +487,15 @@ class App(ctk.CTk):
             self.fill_label(4, 107)
         if len(data) > 0:
             if frame_ind == 0:
-                i = 4
+                j = 4
             elif frame_ind == 1:
-                i = 3
+                if len(str(args[0])) > 0:
+                    j = args[0] + 2
+                else:
+                    j = 3
             else:
-                i = 2
-            mass = float(data[0][i])
+                j = 2
+            mass = float(data[0][j])
             if density != 0.785:
                 mass = round(mass*density/0.785, decimals)
         else:
@@ -508,15 +524,20 @@ class App(ctk.CTk):
     def create_table(self, conn):
         """create new table for database"""
         excel_tables = ["R10210", "R10219", "R10305-5", "D8940",
-                        "C10210", "C10219",
+                        "C10210", "C10219", "en10297p1", "en10297p2",
                         "IPE", "IPN",
                         "PFC", "CH", "UPE", "UPN", "U"]
         for j, each in enumerate(self.rect_spr_list + self.circle_spr_list +
+                                 list(self.circle_spr_extra_dict.values()) +
                                  self.beam_spr_list + self.channel_spr_list):
             if j < 4:
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
             elif j < 6:
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([W] REAL, [T] REAL, [M] REAL)")
+            elif j == 6:
+                self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([T] REAL)")
+            elif j == 7:
+                self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([D] REAL)")
             else:
                 self.cursor.execute(
                     "CREATE TABLE IF NOT EXISTS " + each + " ([N] REAL, [M] REAL, "
@@ -527,7 +548,7 @@ class App(ctk.CTk):
             spreadsheet = pandas.read_excel("metalDB.xlsx", excel_tables[j])
             spreadsheet.to_sql(name=each, con=conn, if_exists="replace")
         
-        # self.cursor.execute("SELECT * FROM CH_EN10365 WHERE N = 'CH76x38x7' ")
+        # self.cursor.execute("SELECT primary FROM en10297p1 WHERE T = 2.3 ")
         # data = self.cursor.fetchall()
         # print(data)
 
@@ -556,7 +577,7 @@ class UpperMenu(ctk.CTkFrame):
         self.buttonList = (self.holSecBt.button, self.circleBt.button, self.beamBt.button, self.channel_Bt.button)
 
         # info button
-        MenuButton(self, 4, "information.png", "transparent")  # InfoBt =
+        MenuButton(self, 4, "information.png", "transparent")
 
     def change_fg(self, column):
         """change foreground of side menu button"""
@@ -625,7 +646,7 @@ class BuildInterface(ctk.CTkFrame):
             self.spreadsheets_list = master.rect_spr_list
             minus_row = 0
         elif frame_ind == 1:
-            self.combo_list = ["EN10210", "EN10219"]
+            self.combo_list = ["EN10210", "EN10219", "EN10297-1"]
             self.spreadsheets_list = master.circle_spr_list
         elif frame_ind == 2:
             self.combo_dict = {"EN10365 - IPE": 0, "EN10365 - IPN": 1}
