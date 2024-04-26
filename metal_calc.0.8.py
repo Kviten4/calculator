@@ -37,7 +37,7 @@ class App(ctk.CTk):
         self.densChangedC = "#f95c00"  # orange
 
         # spreadsheets lists
-        self.rect_spr_list = ["rectEN10210", "rectEN10219", "rectEN10305"]
+        self.rect_spr_list = ["rectEN10210", "rectEN10219", "rectEN10305", "D8940"]
         self.circle_spr_list = ["circleEN10210", "circleEN10219"]
         self.beam_spr_list = ["IPE_EN10365", "IPN_EN10365"]
         self.channel_spr_list = ["PFC_EN10365", "CH_EN10365", "UPE_EN10365", "UPN_EN10365", "U_EN10365"]
@@ -67,24 +67,15 @@ class App(ctk.CTk):
         self.indList = self.list_of_indLists[0]
 
         # list for errLabels indexes
-        ErLabLi = [self.windows_list[0].wLabel.label, self.windows_list[0].hLabel.label, self.windows_list[0].tLabel.label,
-                   self.windows_list[0].dLabel.label, self.windows_list[0].sumLabel.label]
-        ErLabLi1 = [self.windows_list[1].wLabel.label, "", self.windows_list[1].tLabel.label, self.windows_list[1].dLabel.label,
-                    self.windows_list[1].sumLabel.label]
-        ErLabLi2 = ["", "", "", self.windows_list[2].dLabel.label, self.windows_list[2].sumLabel.label]
-        ErLabLi3 = ["", "", "", self.windows_list[3].dLabel.label, self.windows_list[3].sumLabel.label]
-        self.list_of_labels_lists = [ErLabLi, ErLabLi1, ErLabLi2, ErLabLi3]
+        self.list_of_labels_lists = []
+        # list of entries
+        self.list_of_entries_lists =[]
+        for each in self.windows_list:
+            self.list_of_labels_lists.append(each.er_lab_list)
+            self.list_of_entries_lists.append(each.entries_list)
+
         self.ErLabList = self.list_of_labels_lists[0]
         self.ErLabListNew = self.list_of_labels_lists[0]
-
-        # list of entries
-        entrLst = [self.windows_list[0].width_entry.entry, self.windows_list[0].height_entry.entry,
-                   self.windows_list[0].thickness_entry.entry, self.windows_list[0].dens_entry.entry, self.windows_list[0].sumEntry.entry]
-        entrLst1 = [self.windows_list[1].width_entry.entry, "", self.windows_list[1].thickness_entry.entry,
-                    self.windows_list[1].dens_entry.entry, self.windows_list[1].sumEntry.entry]
-        entrLst2 = ["", "", "", self.windows_list[2].dens_entry.entry, self.windows_list[2].sumEntry.entry]
-        entrLst3 = ["", "", "", self.windows_list[3].dens_entry.entry, self.windows_list[3].sumEntry.entry]
-        self.list_of_entries_lists = [entrLst, entrLst1, entrLst2, entrLst3]
         self.entriesList = self.list_of_entries_lists[0]
         self.entriesListNew = self.list_of_entries_lists[0]
 
@@ -177,7 +168,7 @@ class App(ctk.CTk):
         if action_code == "-1":  # focusout action code
             pass
         else:
-            if inp.isnumeric():
+            if inp.isdigit():
                 # give indicator
                 if inp[0] == "0":
                     self.fill_label(er_label_num, 77)
@@ -208,7 +199,9 @@ class App(ctk.CTk):
                 ("width, mm", "height, mm", "thickness, mm", "outs. diam., mm"): \
                 # fucking validation take placeholder as input
             self.clear_label(er_label_num)
-            if inp.isdigit():
+            if " " in inp:
+                return False
+            elif inp.isdigit():
                 # error if zero
                 if inp[0] == "0":
                     # fill errorLabel
@@ -235,7 +228,7 @@ class App(ctk.CTk):
             elif inp == "":
                 self.change_indicator(er_label_num, False)
                 self.entriesList[int(er_label_num)].configure(border_color=app.origEntBorderColor)
-                self.ErLabList[4].configure(text="")
+                self.clear_label(4)
                 return True
             else:
                 inp = inp.replace(",", ".")
@@ -311,6 +304,8 @@ class App(ctk.CTk):
                 error = str("can't start with zero")
             case 88:
                 error = str("10k max")
+            case 105:
+                error = "this size is not in the standard"
         self.ErLabList[int(er_label_num)].configure(text=error)
 
     ########################
@@ -330,6 +325,7 @@ class App(ctk.CTk):
     ########################
     def goto_count(self, frame_ind):
         """keyrelease event, main function"""
+        decimals = 2
         match frame_ind:
             case 0 | 1:
                 # check all indicators
@@ -347,30 +343,31 @@ class App(ctk.CTk):
                 # get parameters
                 width = float(self.entriesList[0].get().replace(",", "."))
                 height = 0
-                if frame_ind == 0:
-                    height = float(self.entriesList[1].get().replace(",", "."))
                 thickness = float(self.entriesList[2].get().replace(",", "."))
 
-                # check thickness
+                # check thickness and get height
                 if frame_ind == 0:
+                    height = float(self.entriesList[1].get().replace(",", "."))
                     smaller = min(width, height)
                 else:
                     smaller = width
+                
+                if smaller <= 40 or thickness <= 1.5:
+                    decimals = 3
 
                 indicator = self.give_color_th(thickness, smaller)
                 if indicator:
                     standard = self.interface.combobox.combobox.get()
+                    # get standard's index
+                    i = app.find_standard_index(standard)
+                    spreadsheet = app.interface.spreadsheets_list[i]
                     ro = 0.0
                     ri = 0.0
-                    if standard == "EN10210":
-                        if frame_ind == 0:
+                    if frame_ind == 0:
+                        if i == 0:
                             ro = 1.5 * thickness
                             ri = thickness
-                        
-                        # for database
-                        spreadsheet = app.interface.spreadsheets_list[0]
-                    elif standard == "EN10219":
-                        if frame_ind == 0:
+                        elif i == 1:
                             if thickness <= 6:
                                 ro = 2 * thickness
                                 ri = thickness
@@ -380,22 +377,14 @@ class App(ctk.CTk):
                             elif thickness > 10:
                                 ro = 3 * thickness
                                 ri = 2 * thickness
-                        spreadsheet = app.interface.spreadsheets_list[1]
-                    else:
-                        if thickness <= 2.5:
-                            ro = 0.5 * thickness
+                        elif i == 2:
+                            if thickness <= 2.5:
+                                ro = 0.5 * thickness
+                            else:
+                                ro = 1.75 * thickness
+                                ri = 0.75 * thickness
                         else:
-                            ro = 1.75 * thickness
-                            ri = 0.75 * thickness
-                        spreadsheet = app.interface.spreadsheets_list[2]
-                    # counting
-                    if frame_ind == 0:
-                        area = round((2 * thickness * (width + height - 2 * thickness) - (4 - 3.141592) *
-                                      (ro ** 2 - ri ** 2)) / 100, 5)
-                        app.image_side.pollute_imageside(frame_ind, [height, width, thickness, ro, ri])
-                    else:
-                        area = round(3.141592 * (width ** 2 - (width - 2 * thickness) ** 2) / 400, 5)
-                        app.image_side.pollute_imageside(frame_ind, [width, thickness])
+                            ro = 1.5 * thickness
 
                     # search in database
                     match frame_ind:
@@ -409,19 +398,30 @@ class App(ctk.CTk):
                                     "SELECT * FROM " + spreadsheet + " WHERE ((W =" + str(width) + " ANd H =" + str(
                                         height) + ") OR (W =" + str(height) + " ANd H =" + str(
                                         width) + ")) and T =" + str(thickness))
+                            app.image_side.pollute_imageside(frame_ind, [height, width, thickness, ro, ri])
                         case 1:
                             self.cursor.execute(
                                 "SELECT * FROM " + spreadsheet + " WHERE W =" + str(width) + " and T =" + str(
                                     thickness))
+                            app.image_side.pollute_imageside(frame_ind, [width, thickness])
                     data = self.cursor.fetchall()
-                    self.put_sumtext(frame_ind, data, standard, area)
 
                     if len(data) == 0:
-                        self.ErLabList[4].configure(text="this size is not in the standard")
+                        if frame_ind == 0:
+                            if standard != app.interface.combo_list[3]:
+                                area = round((2 * thickness * (width + height - 2 * thickness) - (4 - 3.141592) *
+                                            (ro ** 2 - ri ** 2)) / 100, 5)
+                            else:
+                                area = round((thickness ** 2/ 50 * ((width + height)/thickness + 3.141592 - 6)), 5)
+                        else:
+                            area = round(3.141592 * (width ** 2 - (width - 2 * thickness) ** 2) / 400, 5)
+                        self.put_sumtext(frame_ind, data, standard, decimals, area)
+                        self.fill_label(4, 105)
                         self.entriesList[4].configure(state="readonly", border_color=app.densChangedC)
                     else:
+                        self.put_sumtext(frame_ind, data, standard, decimals)
                         self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
-                        self.ErLabList[4].configure(text="")
+                        self.clear_label(4)
 
                 else:
                     self.clear_result_entry()
@@ -440,7 +440,7 @@ class App(ctk.CTk):
                     data = self.cursor.fetchall()
                     app.image_side.pollute_imageside(frame_ind, [data[0][3], data[0][4], data[0][6], data[0][5]])
                     standard = standard.split(" ")[0] + " - " + str(data[0][1])
-                    self.put_sumtext(frame_ind, data, standard)
+                    self.put_sumtext(frame_ind, data, standard, decimals)
                     self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
 
     #############################
@@ -457,26 +457,26 @@ class App(ctk.CTk):
             return True
 
 ##############################
-    def put_sumtext(self, frame_ind, data, standard, *args):
+    def put_sumtext(self, frame_ind, data, standard, decimals, *args):
         """put sum text in result entry"""
         length = int(self.interface.slider.slider.get())
-        if frame_ind == 0:
-            i = 4
-        elif frame_ind == 1:
-            i = 3
-        else:
-            i = 2
         try:
             density = float(self.entriesList[3].get()) / 10000
         except (Exception,):
             density = 0.785
         if len(data) > 0:
+            if frame_ind == 0:
+                i = 4
+            elif frame_ind == 1:
+                i = 3
+            else:
+                i = 2
             mass = float(data[0][i])
             if density != 0.785:
-                mass = round(mass*density/0.785, 2)
+                mass = round(mass*density/0.785, decimals)
         else:
-            mass = round(density * args[0], 2)
-        mass = round(mass * length, 2)
+            mass = round(density * args[0], decimals)
+        mass = round(mass * length, decimals)
         # remove ",oo" if necessary
         if mass.is_integer():
             mass = int(mass)
@@ -494,20 +494,20 @@ class App(ctk.CTk):
         # readonly state kills placeholder if it defines in the same configure
         self.entriesList[4].configure(placeholder_text="result")
         self.entriesList[4].configure(state="readonly", border_color=self.origEntBorderColor)
-        self.ErLabList[4].configure(text="")
+        self.clear_label(4)
 
     #############################
     def create_table(self, conn):
         """create new table for database"""
-        excel_tables = ["R10210", "R10219", "R10305-5",
+        excel_tables = ["R10210", "R10219", "R10305-5", "D8940",
                         "C10210", "C10219",
                         "IPE", "IPN",
                         "PFC", "CH", "UPE", "UPN", "U"]
         for j, each in enumerate(self.rect_spr_list + self.circle_spr_list +
                                  self.beam_spr_list + self.channel_spr_list):
-            if j < 3:
+            if j < 4:
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
-            elif j < 5:
+            elif j < 6:
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([W] REAL, [T] REAL, [M] REAL)")
             else:
                 self.cursor.execute(
@@ -566,7 +566,8 @@ class UpperMenu(ctk.CTkFrame):
                       font=('Helvetica', 14),
                       message="Formulas and data sources:\nhollow sections:\n\
     EN10210-2:2006 p.14-15\n\
-    EN10219-2:2006 p.20-22\n    EN10305-5:2016 p.13-15\nI sections:\n\
+    EN10219-2:2006 p.20-22\n    EN10305-5:2016 p.13-15\n\
+    DSTU 8940:2019 p.10-21\nI sections:\n\
     EN10365:2017 p.8-10, p.27\nchannels:\n    EN10365:2017 p.28-31\n\
     \n\ntested by Flawless\ncreated by Kviten4")
 
@@ -612,7 +613,7 @@ class BuildInterface(ctk.CTkFrame):
 
         minus_row = 2
         if frame_ind == 0:
-            self.combo_list = ["EN10210", "EN10219", "EN10305-5"]
+            self.combo_list = ["EN10210", "EN10219", "EN10305-5", "DSTU 8940"]
             self.spreadsheets_list = master.rect_spr_list
             minus_row = 0
         elif frame_ind == 1:
@@ -632,30 +633,40 @@ class BuildInterface(ctk.CTkFrame):
         vcmd_wht = (master.register(master.valid_wht))
         vcmd_d = (master.register(master.valid_dens))
 
+        self.er_lab_list = []
+        self.entries_list = []
         match frame_ind:
             case 0 | 1:
                 dens_tail = 0
                 self.wLabel = CreateLabels(self, [0, 0], [lpadx, 0], [hpady, 0], elem_width, "w", 1)
-
                 if frame_ind == 0:
                     placeholder = "width, mm"
                 else:
                     placeholder = "outs. diam., mm"
-
                 self.width_entry = CreateEntry(self, [1, 0], [lpadx, 0], [0, lwpady], elem_width, placeholder,
                                                self.custom_font, vcmd_wht, justify, 0, "w", 1, frame_ind)
+                self.er_lab_list.append(self.wLabel.label)
+                self.entries_list.append(self.width_entry.entry)
 
                 if frame_ind == 0:
                     self.hLabel = CreateLabels(self, [2, 0], [lpadx, 0], [0, 0], elem_width, "w", 1)
                     self.height_entry = CreateEntry(self, [3, 0], [lpadx, 0], [0, lwpady], elem_width, "height, mm",
                                                     self.custom_font, vcmd_wht, justify, 1, "w", 1, frame_ind)
-
+                    self.er_lab_list.append(self.hLabel.label)
+                    self.entries_list.append(self.height_entry.entry)
+                else:
+                    self.er_lab_list.append("")
+                    self.entries_list.append("")
                 self.tLabel = CreateLabels(self, [4 - minus_row, 0], [lpadx, 0], [0, 0], elem_width, "w", 1)
                 self.thickness_entry = CreateEntry(self, [5 - minus_row, 0], [lpadx, 0], [0, lwpady],
                                                    elem_width, "thickness, mm", self.custom_font, vcmd_wht, justify,
                                                    2, "w", 1, frame_ind)
+                self.er_lab_list.append(self.tLabel.label)
+                self.entries_list.append(self.thickness_entry.entry)
 
             case 2 | 3:
+                self.er_lab_list.extend(["", "", ""])
+                self.entries_list.extend(["", "", ""])
                 # get list of profiles
                 self.frame_list_of_sec_lists = []
                 dens_tail = 10
@@ -704,6 +715,9 @@ class BuildInterface(ctk.CTkFrame):
                                     self.custom_font, vcmd_wht, "center", 2, "we", 2, frame_ind)
         self.sumEntry.entry.unbind()
         self.sumEntry.entry.configure(state="readonly")
+
+        self.er_lab_list.extend([self.dLabel.label, self.sumLabel.label])
+        self.entries_list.extend([self.dens_entry.entry, self.sumEntry.entry])
 
         if frame_ind == 2 or frame_ind == 3:
             self.combobox.combobox.grid(row=1, column=1, padx=(lpadx2, lpadx), pady=(15, lwpady))
