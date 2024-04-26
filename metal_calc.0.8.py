@@ -178,7 +178,10 @@ class App(ctk.CTk):
                     return False
                 else:
                     if int(inp) <= 10000:
-                        self.entriesList[int(er_label_num)].configure(border_color=app.densChangedC)
+                        if int(inp) == 7850:
+                            self.entriesList[int(er_label_num)].configure(border_color=app.theme_color)
+                        else:
+                            self.entriesList[int(er_label_num)].configure(border_color=app.densChangedC)
                         return True
                     else:
                         self.fill_label(er_label_num, 88)
@@ -306,6 +309,8 @@ class App(ctk.CTk):
                 error = str("10k max")
             case 105:
                 error = "this size is not in the standard"
+            case 107:
+                error = "non-standard density"
         self.ErLabList[int(er_label_num)].configure(text=error)
 
     ########################
@@ -419,9 +424,9 @@ class App(ctk.CTk):
                         self.fill_label(4, 105)
                         self.entriesList[4].configure(state="readonly", border_color=app.densChangedC)
                     else:
+                        self.clear_label(4)
                         self.put_sumtext(frame_ind, data, standard, decimals)
                         self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
-                        self.clear_label(4)
 
                 else:
                     self.clear_result_entry()
@@ -440,6 +445,7 @@ class App(ctk.CTk):
                     data = self.cursor.fetchall()
                     app.image_side.pollute_imageside(frame_ind, [data[0][3], data[0][4], data[0][6], data[0][5]])
                     standard = standard.split(" ")[0] + " - " + str(data[0][1])
+                    self.clear_label(4)
                     self.put_sumtext(frame_ind, data, standard, decimals)
                     self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
 
@@ -464,6 +470,8 @@ class App(ctk.CTk):
             density = float(self.entriesList[3].get()) / 10000
         except (Exception,):
             density = 0.785
+        if density != 0.785:
+            self.fill_label(4, 107)
         if len(data) > 0:
             if frame_ind == 0:
                 i = 4
