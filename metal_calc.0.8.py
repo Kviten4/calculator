@@ -38,15 +38,15 @@ class App(ctk.CTk):
 
         # spreadsheets lists
         self.rect_spr_list = ["rect_EN10210", "rect_EN10219", "rect_EN10305", "D8940"]
-        self.circle_spr_list = ["crcl_EN10210", "crcl_EN10219", "en10297p1", "dstu8938p1", "dstu8943p1"]
-        self.circle_spr_extra_dict = {2: "en10297p2", 3: "dstu8938p2", 4: "dstu8943p2"}
+        self.circle_spr_list = ["crcl_EN10210", "crcl_EN10219", "en10297p1", "dstu8938p1", "dstu8939p1", "dstu8943p1"]
+        self.circle_spr_extra_dict = {2: "en10297p2", 3: "dstu8938p2", 4: "dstu8939p2", 5: "dstu8943p2"}
         self.beam_spr_list = ["IPE_EN10365", "IPN_EN10365"]
         self.channel_spr_list = ["PFC_EN10365", "CH_EN10365", "UPE_EN10365", "UPN_EN10365", "U_EN10365"]
 
         # database
         conn = sqlite3.connect(self.resource_path("database\\metalDB.db"))
         self.cursor = conn.cursor()
-        self.create_table(conn)
+        # self.create_table(conn)
 
         # menu
         self.upper_menu = UpperMenu(self)
@@ -70,7 +70,7 @@ class App(ctk.CTk):
         # list for errLabels indexes
         self.list_of_labels_lists = []
         # list of entries
-        self.list_of_entries_lists =[]
+        self.list_of_entries_lists = []
         for each in self.windows_list:
             self.list_of_labels_lists.append(each.er_lab_list)
             self.list_of_entries_lists.append(each.entries_list)
@@ -369,9 +369,9 @@ class App(ctk.CTk):
                     spreadsheet = app.interface.spreadsheets_list[index]
                     ro = 0.0
                     ri = 0.0
+                    data_ind = 4
                     match frame_ind:
                         case 0:
-                            data_ind = 4
                             if index == 0:
                                 ro = 1.5 * thickness
                                 ri = thickness
@@ -414,6 +414,10 @@ class App(ctk.CTk):
                                     "SELECT * FROM " + spreadsheet + " WHERE W =" + str(width) + " and T =" + str(
                                         thickness))
                             else:
+                                # for dstu8939 have to be 3 decimals
+                                if index == 4:
+                                    decimals = 3
+                                
                                 self.cursor.execute(
                                     "SELECT * FROM " + spreadsheet + " WHERE T =" + str(thickness))
                                 data = self.cursor.fetchall()
@@ -425,8 +429,9 @@ class App(ctk.CTk):
                     data = self.cursor.fetchall()
                     # check blankness
                     if len(data) > 0 and frame_ind == 1 and index >= 2:
-                        if data[0][data_ind] == None:
+                        if data[0][data_ind] is None:
                             data = []
+                    
                     if len(data) > 0:
                         self.clear_label(4)
                         self.put_sumtext(data, standard, decimals, data_ind)
@@ -435,9 +440,9 @@ class App(ctk.CTk):
                         if frame_ind == 0:
                             if index != 3:
                                 area = round((2 * thickness * (width + height - 2 * thickness) - (4 - 3.141592) *
-                                            (ro ** 2 - ri ** 2)) / 100, 5)
+                                              (ro ** 2 - ri ** 2)) / 100, 5)
                             else:
-                                area = round((thickness ** 2/ 50 * ((width + height)/thickness + 3.141592 - 6)), 5)
+                                area = round((thickness ** 2 / 50 * ((width + height)/thickness + 3.141592 - 6)), 5)
                         else:
                             area = round(3.141592 * (width ** 2 - (width - 2 * thickness) ** 2) / 400, 5)                        
                         self.put_sumtext(data, standard, decimals, data_ind, area)
@@ -519,7 +524,8 @@ class App(ctk.CTk):
     def create_table(self, conn):
         """create new table for database"""
         excel_tables = ["R10210", "R10219", "R10305-5", "D8940",
-                        "C10210", "C10219", "en10297p1", "dstu8938p1", "dstu8943p1", "en10297p2", "dstu8938p2", "dstu8943p2",
+                        "C10210", "C10219", "en10297p1", "dstu8938p1", "dstu8939p1", "dstu8943p1", 
+                        "en10297p2", "dstu8938p2", "dstu8939p2", "dstu8943p2",
                         "IPE", "IPN",
                         "PFC", "CH", "UPE", "UPN", "U"]
         for j, each in enumerate(self.rect_spr_list + self.circle_spr_list +
@@ -529,9 +535,9 @@ class App(ctk.CTk):
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
             elif j < 6:
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([W] REAL, [T] REAL, [M] REAL)")
-            elif j < 9:
+            elif j < 10:
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([T] REAL)")
-            elif j < 12:
+            elif j < 14:
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([D] REAL)")
             else:
                 self.cursor.execute(
@@ -542,11 +548,6 @@ class App(ctk.CTk):
             # read and rewrite tables
             spreadsheet = pandas.read_excel("metalDB.xlsx", excel_tables[j])
             spreadsheet.to_sql(name=each, con=conn, if_exists="replace")
-        
-        # self.cursor.execute("SELECT * FROM dstu8943p2 ")
-        # data = self.cursor.fetchall()
-        # print(data)
-
         # conn.close()
 
     #############################
@@ -593,7 +594,7 @@ class UpperMenu(ctk.CTkFrame):
         EN10305-5:2016 p.13-15\n        DSTU8940:2019 p.10-21\n - circular tubes:\n\
         EN10210-2:2006 p.14, p.20-23\n        EN10219-2:2006 p.20, p.24-28\n\
         EN10297-1:2003 p.23-26\n        DSTU8938:2019 p.4-11\n\
-        DSTU8943:2019 p.4-8\n - I sections:\n\
+        DSTU8939:2019 p.4-10\n        DSTU8943:2019 p.4-8\n - I sections:\n\
         EN10365:2017 p.8-10, p.27\n - channels:\n        EN10365:2017 p.28-31\n\
     \n\ntested by Flawless\ncreated by Kviten4")
 
@@ -621,16 +622,13 @@ class BuildInterface(ctk.CTkFrame):
     def __init__(self, master, frame_ind):
         super().__init__(master)
         self.configure(fg_color="transparent")
-        ###############
 
-        # some paddings
         lpadx = 20  # left padx
         lpadx2 = 20  # left padx 2-nd column
         hpady = 0  # upper pady
         lwpady = 5  # lower pady
         justify = "left"
 
-        # elements' width
         elem_width = 140
         # for slider
         sl_lab_width = 30
@@ -643,14 +641,15 @@ class BuildInterface(ctk.CTkFrame):
             self.spreadsheets_list = master.rect_spr_list
             minus_row = 0
         elif frame_ind == 1:
-            self.combo_list = ["EN10210", "EN10219", "EN10297-1", "DSTU8938", "DSTU8943"]
+            self.combo_list = ["EN10210", "EN10219", "EN10297-1", "DSTU8938", "DSTU8939", "DSTU8943"]
             self.spreadsheets_list = master.circle_spr_list
         elif frame_ind == 2:
             self.combo_dict = {"EN10365 - IPE": 0, "EN10365 - IPN": 1}
             self.combo_list = list(self.combo_dict.keys())
             self.spreadsheets_list = master.beam_spr_list
         else:
-            self.combo_dict = {"EN10365 - PFC": 0, "EN10365 - CH": 1, "EN10365 - UPE": 0, "EN10365 - UPN": 1, "EN10365 - U": 1}
+            self.combo_dict = {"EN10365 - PFC": 0, "EN10365 - CH": 1, "EN10365 - UPE": 0,
+                               "EN10365 - UPN": 1, "EN10365 - U": 1}
             self.combo_list = list(self.combo_dict.keys())
             self.spreadsheets_list = master.channel_spr_list
             
@@ -661,9 +660,9 @@ class BuildInterface(ctk.CTkFrame):
 
         self.er_lab_list = []
         self.entries_list = []
+        dens_tail = 0
         match frame_ind:
             case 0 | 1:
-                dens_tail = 0
                 self.wLabel = CreateLabels(self, [0, 0], [lpadx, 0], [hpady, 0], elem_width, "w", 1)
                 if frame_ind == 0:
                     placeholder = "width, mm"
@@ -706,8 +705,9 @@ class BuildInterface(ctk.CTkFrame):
                     for each in data:
                         self.frame_list_of_sec_lists[i].append(list(each)[0][:len(list(each)[0]) - remove_last])
 
-                self.scrollable_button_frame = ScrollableButtonFrame(self, width=elem_width-26, height=100, border_width=2,
-                                                                     border_color=master.origEntBorderColor, )
+                self.scrollable_button_frame = ScrollableButtonFrame(self, width=elem_width-26, height=100,
+                                                                     border_width=2,
+                                                                     border_color=master.origEntBorderColor)
                 self.scrollable_button_frame.grid(row=0, column=0, padx=(lpadx, 0), pady=(hpady + 5, lwpady),
                                                   rowspan=4, columnspan=1, sticky="nesw")
                 self.scrollable_button_frame._scrollbar.configure(height=0)  # bug, it's needed
@@ -840,6 +840,7 @@ class CreateCombobox:
         self.combobox.grid(row=row_col[0], column=row_col[1], padx=(padx_l[0], padx_l[1]), pady=(pady_l[0], pady_l[1]))
 
         self.dropdown_menu = None
+        self.frame_dropdown = None
         # rebind to new function
         self.combobox._canvas.tag_unbind("dropdown_arrow", "<Button-1>")
         self.combobox._canvas.tag_unbind("right_parts", "<Button-1>")
@@ -879,14 +880,13 @@ class CreateCombobox:
     ############
     def add_btn(self, i, each, length, frame_ind):
         """add buttons to the dropdown menu"""
-        button = ctk.CTkButton(self.frame_dropdown, text=each, fg_color="transparent", width=self.dropdown_menu.width - 5,
+        button = ctk.CTkButton(self.frame_dropdown, text=each, fg_color="transparent", corner_radius=3, anchor="w",
+                               width=self.dropdown_menu.width - 5, text_color=app.textColor,
                                font=app.interface.custom_font,
-                               command=lambda: self.close_toplevel(each, frame_ind), corner_radius=3, anchor="w",
-                               text_color=app.textColor)
+                               command=lambda: self.close_toplevel(each, frame_ind))
         pady_lower = 0
         if i == length - 1:
             pady_lower = 2
-
         button.grid(row=i, column=0, padx=(2, 2), pady=(2, pady_lower))
 
     ############
@@ -969,7 +969,7 @@ class ImageSide(ctk.CTkFrame):
             [["H", 9, 104], ["W", 115, 187], ["t", 238, 34], ["s", 178, 120]],
             [["H", 0, 104], ["W", 115, 187], ["t", 238, 34], ["s", 135, 86]]
         ]
-        self.image_label_list = [[], [], [], []]
+        self.image_label_list = []
         self.db_images = []
         db_images_beams = ["bigBeam.png", "bigBeam_taper.png"]
         db_images_channels = ["big_Usect.png", "big_Usect_taper.png"]
@@ -982,6 +982,7 @@ class ImageSide(ctk.CTkFrame):
         for each in images_list:
             self.db_images.append(ctk.CTkImage(Image.open(App.resource_path("assets\\" + each)), size=(293, 225)))
         self.image_png_names = ["bigRec.png", "bigCircle.png", "bigBeam.png", "big_Usect.png", ]
+        self.label_im = None
         self.create_imageside(frame_ind)
 
     ##############################
@@ -995,19 +996,20 @@ class ImageSide(ctk.CTkFrame):
             label = ctk.CTkLabel(self.label_im, fg_color="transparent", font=('Helvetica', 14), height=13, width=34,
                                  anchor="center", text=item[0])
             label.place(x=item[1], y=item[2])
-            self.image_label_list[frame_ind].append(label)
+            self.image_label_list.append(label)
 
     ##############################
     @staticmethod
     def clear_imageside(frame_ind):
         """clear parameters labels"""
-        for k, _label in enumerate(app.image_side_list[frame_ind].image_label_list[frame_ind]):
+        for k, _label in enumerate(app.image_side_list[frame_ind].image_label_list):
             _label.configure(text=app.image_side_list[frame_ind].labels_parameters[frame_ind][k][0])
 
     ##############################
     @staticmethod
     def pollute_imageside(frame_ind, list_of_parameters):
         """pollute labels on image side"""
+        lb_txt = "N/S"
         for j, par in enumerate(list_of_parameters):
             match frame_ind:
                 case 0 | 1:
@@ -1016,7 +1018,7 @@ class ImageSide(ctk.CTkFrame):
                     if j < 3:
                         lb_txt = str(par).replace(".", ",")
                     elif par == 0:
-                        lb_txt = "N/S"
+                        pass
                     elif round(float(par), 1).is_integer():
                         lb_txt = str(int(round(par, 1))).replace(".", ",")
                     else:
@@ -1025,7 +1027,7 @@ class ImageSide(ctk.CTkFrame):
                     if float(par).is_integer():
                         par = int(par)
                     lb_txt = str(par).replace(".", ",")
-            app.image_side_list[frame_ind].image_label_list[frame_ind][j].configure(text=lb_txt)
+            app.image_side_list[frame_ind].image_label_list[j].configure(text=lb_txt)
 
 
 #########################################################################################
