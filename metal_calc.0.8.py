@@ -37,16 +37,16 @@ class App(ctk.CTk):
         self.densChangedC = "#f95c00"  # orange
 
         # spreadsheets lists
-        self.rect_spr_list = ["rectEN10210", "rectEN10219", "rectEN10305", "D8940"]
-        self.circle_spr_list = ["circleEN10210", "circleEN10219", "en10297p1"]
-        self.circle_spr_extra_dict = {2: "en10297p2"}
+        self.rect_spr_list = ["rect_EN10210", "rect_EN10219", "rect_EN10305", "D8940"]
+        self.circle_spr_list = ["crcl_EN10210", "crcl_EN10219", "en10297p1", "dstu8938p1", "dstu8943p1"]
+        self.circle_spr_extra_dict = {2: "en10297p2", 3: "dstu8938p2", 4: "dstu8943p2"}
         self.beam_spr_list = ["IPE_EN10365", "IPN_EN10365"]
         self.channel_spr_list = ["PFC_EN10365", "CH_EN10365", "UPE_EN10365", "UPN_EN10365", "U_EN10365"]
 
         # database
         conn = sqlite3.connect(self.resource_path("database\\metalDB.db"))
         self.cursor = conn.cursor()
-        # self.create_table(conn)
+        self.create_table(conn)
 
         # menu
         self.upper_menu = UpperMenu(self)
@@ -358,7 +358,7 @@ class App(ctk.CTk):
                 else:
                     smaller = width
                 
-                if smaller <= 40 or thickness <= 1.5:
+                if smaller <= 40 or thickness <= 2:
                     decimals = 3
 
                 indicator = self.give_color_th(thickness, smaller)
@@ -366,35 +366,37 @@ class App(ctk.CTk):
                     standard = self.interface.combobox.combobox.get()
                     # get standard's index
                     index = app.find_standard_index(standard)
-                    spreadsheet = app.interface.spreadsheets_list[i]
+                    spreadsheet = app.interface.spreadsheets_list[index]
                     ro = 0.0
                     ri = 0.0
-                    if frame_ind == 0:
-                        if index == 0:
-                            ro = 1.5 * thickness
-                            ri = thickness
-                        elif index == 1:
-                            if thickness <= 6:
-                                ro = 2 * thickness
-                                ri = thickness
-                            elif 6 < thickness <= 10:
-                                ro = 2.5 * thickness
-                                ri = 1.5 * thickness
-                            elif thickness > 10:
-                                ro = 3 * thickness
-                                ri = 2 * thickness
-                        elif index == 2:
-                            if thickness <= 2.5:
-                                ro = 0.5 * thickness
-                            else:
-                                ro = 1.75 * thickness
-                                ri = 0.75 * thickness
-                        else:
-                            ro = 1.5 * thickness
-
-                    # search in database
                     match frame_ind:
                         case 0:
+                            data_ind = 4
+                            if index == 0:
+                                ro = 1.5 * thickness
+                                ri = thickness
+                            elif index == 1:
+                                if thickness <= 6:
+                                    ro = 2 * thickness
+                                    ri = thickness
+                                elif 6 < thickness <= 10:
+                                    ro = 2.5 * thickness
+                                    ri = 1.5 * thickness
+                                elif thickness > 10:
+                                    ro = 3 * thickness
+                                    ri = 2 * thickness
+                            elif index == 2:
+                                if thickness <= 2.5:
+                                    ro = 0.5 * thickness
+                                else:
+                                    ro = 1.75 * thickness
+                                    ri = 0.75 * thickness
+                            else:
+                                ro = 1.5 * thickness
+                            ro = round(ro, 5)
+                            ri = round(ri, 5)
+
+                            # search in database    
                             if width == height:
                                 self.cursor.execute(
                                     "SELECT * FROM " + spreadsheet + " WHERE W =" + str(width) + " ANd H =" + str(
@@ -406,6 +408,7 @@ class App(ctk.CTk):
                                         width) + ")) and T =" + str(thickness))
                             app.image_side.pollute_imageside(frame_ind, [height, width, thickness, ro, ri])
                         case 1:
+                            data_ind = 3
                             if index < 2:
                                 self.cursor.execute(
                                     "SELECT * FROM " + spreadsheet + " WHERE W =" + str(width) + " and T =" + str(
@@ -415,38 +418,38 @@ class App(ctk.CTk):
                                     "SELECT * FROM " + spreadsheet + " WHERE T =" + str(thickness))
                                 data = self.cursor.fetchall()
                                 if len(data) > 0:
-                                    col_ind = data[0][0]
+                                    data_ind = data[0][0] + 2
                                     self.cursor.execute(
                                         "SELECT * FROM " + app.circle_spr_extra_dict[index] + " WHERE D =" + str(width))
                             app.image_side.pollute_imageside(frame_ind, [width, thickness])
                     data = self.cursor.fetchall()
-
-                    if len(data) == 0:
+                    # check blankness
+                    if len(data) > 0 and frame_ind == 1 and index >= 2:
+                        if data[0][data_ind] == None:
+                            data = []
+                    if len(data) > 0:
+                        self.clear_label(4)
+                        self.put_sumtext(data, standard, decimals, data_ind)
+                        self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
+                    else:
                         if frame_ind == 0:
-                            if standard != app.interface.combo_list[3]:
+                            if index != 3:
                                 area = round((2 * thickness * (width + height - 2 * thickness) - (4 - 3.141592) *
                                             (ro ** 2 - ri ** 2)) / 100, 5)
                             else:
                                 area = round((thickness ** 2/ 50 * ((width + height)/thickness + 3.141592 - 6)), 5)
                         else:
-                            area = round(3.141592 * (width ** 2 - (width - 2 * thickness) ** 2) / 400, 5)
-                        self.put_sumtext(frame_ind, data, standard, decimals, area)
+                            area = round(3.141592 * (width ** 2 - (width - 2 * thickness) ** 2) / 400, 5)                        
+                        self.put_sumtext(data, standard, decimals, data_ind, area)
                         self.fill_label(4, 105)
                         self.entriesList[4].configure(state="readonly", border_color=app.densChangedC)
-                    else:
-                        self.clear_label(4)
-                        if index == 2 and frame_ind == 1:
-                            self.put_sumtext(frame_ind, data, standard, decimals, col_ind)
-                        else:
-                            self.put_sumtext(frame_ind, data, standard, decimals)
-                        self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
-
                 else:
                     self.clear_result_entry()
                     app.image_side.clear_imageside(frame_ind)
 
             case 2 | 3:
                 self.list_trick()
+                data_ind = 4
                 profile_name = self.interface.scrollable_button_frame.button_chosen
                 standard = self.interface.combobox.combobox.get()
                 
@@ -459,13 +462,13 @@ class App(ctk.CTk):
                     app.image_side.pollute_imageside(frame_ind, [data[0][3], data[0][4], data[0][6], data[0][5]])
                     standard = standard.split(" ")[0] + " - " + str(data[0][1])
                     self.clear_label(4)
-                    self.put_sumtext(frame_ind, data, standard, decimals)
+                    self.put_sumtext(data, standard, decimals, data_ind)
                     self.entriesList[4].configure(state="readonly", border_color=app.theme_color)
 
     #############################
     def give_color_th(self, th, smaller):
         """give or not color for thickness entry"""
-        if th > smaller / 4:
+        if th > smaller / 3:
             self.fill_label("2", 66)
             self.entriesList[2].configure(border_color="red")
             return False
@@ -476,7 +479,7 @@ class App(ctk.CTk):
             return True
 
 ##############################
-    def put_sumtext(self, frame_ind, data, standard, decimals, *args):
+    def put_sumtext(self, data, standard, decimals, data_ind, *args):
         """put sum text in result entry"""
         length = int(self.interface.slider.slider.get())
         try:
@@ -485,20 +488,12 @@ class App(ctk.CTk):
             density = 0.785
         if density != 0.785:
             self.fill_label(4, 107)
+
         if len(data) > 0:
-            if frame_ind == 0:
-                j = 4
-            elif frame_ind == 1:
-                if len(str(args[0])) > 0:
-                    j = args[0] + 2
-                else:
-                    j = 3
-            else:
-                j = 2
-            mass = float(data[0][j])
+            mass = float(data[0][data_ind])
             if density != 0.785:
                 mass = round(mass*density/0.785, decimals)
-        else:
+        else: 
             mass = round(density * args[0], decimals)
         mass = round(mass * length, decimals)
         # remove ",oo" if necessary
@@ -509,7 +504,7 @@ class App(ctk.CTk):
         self.entriesList[4].configure(state="normal")
         self.entriesList[4].delete("0", "end")
         self.entriesList[4].insert(0, sumtext)
-
+    
     ##############################
     def clear_result_entry(self):
         """clear result entry"""
@@ -524,7 +519,7 @@ class App(ctk.CTk):
     def create_table(self, conn):
         """create new table for database"""
         excel_tables = ["R10210", "R10219", "R10305-5", "D8940",
-                        "C10210", "C10219", "en10297p1", "en10297p2",
+                        "C10210", "C10219", "en10297p1", "dstu8938p1", "dstu8943p1", "en10297p2", "dstu8938p2", "dstu8943p2",
                         "IPE", "IPN",
                         "PFC", "CH", "UPE", "UPN", "U"]
         for j, each in enumerate(self.rect_spr_list + self.circle_spr_list +
@@ -534,9 +529,9 @@ class App(ctk.CTk):
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([W] REAL, [H] REAL, [T] REAL, [M] REAL)")
             elif j < 6:
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([W] REAL, [T] REAL, [M] REAL)")
-            elif j == 6:
+            elif j < 9:
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([T] REAL)")
-            elif j == 7:
+            elif j < 12:
                 self.cursor.execute("CREATE TABLE IF NOT EXISTS " + each + " ([D] REAL)")
             else:
                 self.cursor.execute(
@@ -548,7 +543,7 @@ class App(ctk.CTk):
             spreadsheet = pandas.read_excel("metalDB.xlsx", excel_tables[j])
             spreadsheet.to_sql(name=each, con=conn, if_exists="replace")
         
-        # self.cursor.execute("SELECT primary FROM en10297p1 WHERE T = 2.3 ")
+        # self.cursor.execute("SELECT * FROM dstu8943p2 ")
         # data = self.cursor.fetchall()
         # print(data)
 
@@ -592,12 +587,14 @@ class UpperMenu(ctk.CTkFrame):
     def popup_info(self):
         """info"""
         CTkMessagebox(self.master, title="Info", justify="center", icon_size=(30, 30), button_height=28,
-                      font=('Helvetica', 14),
-                      message="Formulas and data sources:\nhollow sections:\n\
-    EN10210-2:2006 p.14-15\n\
-    EN10219-2:2006 p.20-22\n    EN10305-5:2016 p.13-15\n\
-    DSTU 8940:2019 p.10-21\nI sections:\n\
-    EN10365:2017 p.8-10, p.27\nchannels:\n    EN10365:2017 p.28-31\n\
+                      font=('Helvetica', 14), width=550,
+                      message="Formulas and data sources:\n - square and rectangular tubes:\n\
+        EN10210-2:2006 p.15, p.24-29\n        EN10219-2:2006 p.21-22, p.28-34\n\
+        EN10305-5:2016 p.13-15\n        DSTU8940:2019 p.10-21\n - circular tubes:\n\
+        EN10210-2:2006 p.14, p.20-23\n        EN10219-2:2006 p.20, p.24-28\n\
+        EN10297-1:2003 p.23-26\n        DSTU8938:2019 p.4-11\n\
+        DSTU8943:2019 p.4-8\n - I sections:\n\
+        EN10365:2017 p.8-10, p.27\n - channels:\n        EN10365:2017 p.28-31\n\
     \n\ntested by Flawless\ncreated by Kviten4")
 
 
@@ -642,11 +639,11 @@ class BuildInterface(ctk.CTkFrame):
 
         minus_row = 2
         if frame_ind == 0:
-            self.combo_list = ["EN10210", "EN10219", "EN10305-5", "DSTU 8940"]
+            self.combo_list = ["EN10210", "EN10219", "EN10305-5", "DSTU8940"]
             self.spreadsheets_list = master.rect_spr_list
             minus_row = 0
         elif frame_ind == 1:
-            self.combo_list = ["EN10210", "EN10219", "EN10297-1"]
+            self.combo_list = ["EN10210", "EN10219", "EN10297-1", "DSTU8938", "DSTU8943"]
             self.spreadsheets_list = master.circle_spr_list
         elif frame_ind == 2:
             self.combo_dict = {"EN10365 - IPE": 0, "EN10365 - IPN": 1}
